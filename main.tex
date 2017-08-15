@@ -108,7 +108,7 @@ The rotor drag could be modeled as, and the fuselage drag could be blah blah.
 
 \subsection{Quadrotor control}
 Assume that the differential flat output of a multirotor, which are $\{x(t)^r,y(t)^r,z(t)^r,\psi^r(t)\}$, are given.
-Here, $\psi$ represents the rotation of a multirotor about $z_b$ axis.
+Here, $\psi$ represents the reference rotation of a multirotor about $z_b$ axis.
 
 To control the translational motion of a multirotor, we utilized geometric control method [TYL]. 
 Define the reference trajectory as $x^r(t)$.
@@ -169,7 +169,6 @@ A = \left[
 \end{array}
 \right]. 
 \end{equation}
-%When the input terms are zeros, the error dynamic system becomes globally exponentially stable system. Also, the above system is globally Lipschitz in $e$, $\Delta$, and $\Phi$. Therefore, by 
 
 Since the system matrix $A$ is Hurwitz, we can find the positive definite matrix $P$ satisfying $PA + A^\intercal P < 0$, and define $Q = -\frac{1}{2}(PA +A^\intercal P)$. 
 Furthermore, it is assumed that the axis $z_b$ tracks $z_b^d$ with sufficient accuracy so that the following condition is satisfied.
@@ -177,17 +176,12 @@ Furthermore, it is assumed that the axis $z_b$ tracks $z_b^d$ with sufficient ac
 \text{s}_\Phi \leq {\frac{\nu}{\eta_p\eta_k}} \label{eq:angleCondition}
 \end{equation}
 where 
-$\nu = \lambda_{\min}(Q)$, $\eta_p = \lambda_{\max}(P)$, and $\eta_k = \lambda_{\max}(\text{blockdiag}\{K_p,K_d\})$.
-%\begin{equation}
-%\begin{array}{ll}
-%\nu = \lambda_{\min}(Q),&\eta_p = \lambda_{\max}(P) \\
-%\eta_k = \lambda_{\max}(\text{blockdiag}\{K_p,K_d\}). &
-%\end{array}
-%\end{equation}
+$\nu = \lambda_{\min}(Q)$, $\eta_p = \lambda_{\max}(P)$, and $\eta_k = \lambda_{\max}(\text{blockdiag}\{K_p,K_v\})$.
 Then, with the Lyapunov candidate function $V = \frac{1}{2}e^\intercal P e$, the stability analysis on eq. \eqref{eq:translationalError} is done as follows: 
 \begin{align}
 \dot{V} &= \textstyle{\frac{1}{2}}e^\intercal (PA + A^\intercal P)e + e^\intercal P B (\Delta + \text{s}_\Phi|\ddot{x}^d|\bar{u}) \nonumber \\
-&= -e^\intercal Q e + e^\intercal P B (\Delta + \text{s}_\Phi |-K e+ge_3+{\ddot{x}}^r|\bar{u}) \label{eq:lyapForFunnel} \\
+&= -e^\intercal Q e \label{eq:lyapForFunnel} \\
+&\;\;\;\; + e^\intercal P B (\Delta + \text{s}_\Phi |-K_p e_p - K_v e_v +ge_3+{\ddot{x}}^r|\bar{u}) \nonumber  \\
 &\leq -\nu |e|^2 + \eta_p|e|\{\bar{\Delta}+\text{s}_\Phi(\eta_k|e|+|ge_3 + \ddot{x}^r|)\} \nonumber \\
 &\leq (-\nu + \text{s}_\Phi\eta_p\eta_k)|e|^2 + \eta_p\{\bar{\Delta} + \text{s}_\Phi|ge_3+\ddot{x}^r|\}|e|. \nonumber 
 \end{align}
@@ -206,11 +200,92 @@ where
 L = \frac{\eta_p}{(\nu-\text{s}_\Phi\eta_p\eta_k)(1-\theta)}[\begin{array}{cc}1 & \text{s}_\Phi \end{array}]. \nonumber
 \end{equation}
 Therefore, eq. \eqref{eq:translationalError} could be considered as an input-to-state stable system with the norm of disturbance $\bar{\Delta}$ and nominal mass normalized collective thrust $|ge_3 + \ddot{x}^r|$ as input terms.
-Also, the term $L$ could be considered as the function of the error $\text{s}_\Phi$. By increasing the attitude error, the norm of $L$ would get bigger. It means that the error $|e|$ will be bounded with larger radius. It implies that the attitude control should be achieved as accurate as possible. 
+Also, the norm of $L$ is a monotonic function of $\text{s}_\Phi$. By increasing the attitude error, the norm of $L$ will be bigger. 
+Accordingly, the error $|e|$ will be bounded with larger radius. 
+It implies that the attitude control should be achieved as accurate as possible. 
 
-Heretofore, the stability of the translational motion of a multirotor has been analyzed. The error $|e|$ will be bounded, and the bound is determined by the norm of disturbance, norm of the nominal thrust, and the attitude control quality. However, even though we know how the error would behave, we cannot find the actual bound of the error state. It could be found by computing funnels explained in the next section.
+\section{Computing funnels}
+Heretofore, the stability of the translational motion of a multirotor has been analyzed. 
+After transient period, the error $|e|$ will be bounded and the radius of the bound is determined by the norm of disturbance, norm of the nominal thrust, and the attitude control quality. 
+Even though we know how the error would behave and the radius of bound in conservative manner [KHALIL], we cannot find the tight bound of the error state with the above analysis. 
 
-\section{Generating funnel libraries}
+However, with the funnel analysis with sum of squares optimization tools, we can find the realistic outermost bound on the state $e$.
+The concept of funnel and numerical method for computing funnel are mainly adopted from [MAJ]. 
+\subsection{Funnel?}
+Funnel represents the outermost bound of the set of error $e(t)\in \xi$ given the initial set of error $|e(0)| \in \xi_0$ and the dynamic equation such as eq.\eqref{eq:translationalError}.
+% gain matrices in the controller $K$, the maximum bound on disturbance $|\Delta| < \bar{\Delta}$, and the accuracy level on the attitude control $|\text{s}_\Phi| < \bar{\text{s}}_\Phi$.
+In other words, the set of error with initial condition $e(0) \in \xi_0$ will evolve inside of the funnel $\mathcal{F}(t) \subset \mathbb{R}^{6\times 1}$.
+These property of the funnel could be written as follows:
+\begin{equation}
+e(t_0) \in \xi_0,\;\xi_0 \subset \mathcal{F}(0)\;\Rightarrow\; e(t) \in \mathcal{F}(t),\;\;\forall t \geq t_0. \label{eq:funnel1}
+\end{equation}
+Define a time varying positive definite matrix $P_\mathcal{F}(t) \in \mathbb{R}^{6\times 6}$, a positive parameter $\alpha(t) \in \mathbb{R}$, and $V_\mathcal{F}(t,e) = \frac{1}{2}e(t)^\intercal P_\mathcal{F}(t) e(t)$.
+In the following analysis, $V_\mathcal{F}(t,e)$ will be the new Lyapunov function, and $\alpha(t)$ will be the parameter indicating the level of $V_\mathcal{F}(t,e)$.
+%Let us suppose that $\dot{V}_\mathcal{F}(t,e) < \dot{\alpha}(t)$ holds for $t \in [t_0,t_f]$ and $e$ satisfying $V_\mathcal{F}(t,e) = \alpha(t)$.
+%Then, it is obvious that the state $e$ cannot escape from the sublevel set described by $V_\mathcal{F}(t,e) = \alpha(t)$.
+Then, with $V_\mathcal{F}(t,e)$ and $\alpha(t)$, define a set $\mathcal{F}(t)$ as 
+\begin{equation}
+\mathcal{F}(t) = \{e(t) \in \mathbb{R}^{6\times 1} | V_\mathcal{F}(t,e) \leq \alpha(t)\}. \label{eq:funnel2}
+\end{equation}
+%Here, for $\hat{e}(t) = \{e|V_\mathcal{F}(t,e) = \alpha(t),\;t\in[t_0,t_f]\}$, let us assume that $V_\mathcal{F}$ and $\alpha$ are constrained such as
+%\begin{equation}
+%\dot{V}_\mathcal{F}(t,e) < \dot{\alpha}(t)\text{ and }V_\mathcal{F}(t,e) = \alpha(t). \label{eq:funnel3}
+%\end{equation}
+Here, let us assume that $V_\mathcal{F}$ and $\alpha$ are constrained such as
+\begin{align}
+&\dot{V}_\mathcal{F}(t,\hat{e}) < \dot{\alpha}(t), \label{eq:funnel3} \\
+&\text{for }\;\;\;\hat{e}(t) = \{e(t)|V_\mathcal{F}(t,e) = \alpha(t),\;t\in[t_0,t_f]\}. \nonumber
+\end{align}
+Then, it is obvious that the state $e(t) \in \mathcal{F}(t)$ cannot escape from the sublevel set described by $V_\mathcal{F}(t,e) \leq \alpha(t)$.
+Therefore, with the set defined in eq. \eqref{eq:funnel2} and constraints in eq. \eqref{eq:funnel3}, 
+the set $\mathcal{F}(t)$ complies with the definition of funnel in eq. \eqref{eq:funnel1} [MAJ]. 
+Another constraint to fulfill the property of funnel defined in eq. \eqref{eq:funnel1} is related on the initial condition of a funnel. 
+At $t = t_0$, the initial set of $e(t_0)$ should be the subset of $\mathcal{F}(t_0)$. 
+%so that we can see how all the error state in $e(t_0) \in \xi_0$ progress as time goes on. 
+To satisfy the constraint, we define the initial set of $e(t_0)$ with a positive definite matrix $R$ as follows:
+\begin{equation}
+\xi_0 = \{e(t_0) \in \mathbb{R}^{6\times1}|e(t_0)^\intercal R e(t_0) \leq 1\}.
+\end{equation} 
+In addition, we want to find $V_\mathcal{F}$ and $\alpha$ that represent the tight outer bound of $e$. 
+Since $P_\mathcal{F}$ is a positive definite matrix and $V_\mathcal{F}$ is a quadratic function of $e$, 
+it is possible to find the ellipsoid that enclosing the level set defined as $V_\mathcal{F}(t,e) = \alpha(t)$.
+Then, if we can minimize the size of the outer shell, the size of the funnel could naturally be minimized consequently.
+The outer ellipsoid can be formulated such as
+\begin{align}
+&\hat{e}^\intercal S(t) \hat{e} \leq 1,\;S(t) \in \mathbb{R}^{6\times 6}, \nonumber \\
+&\text{ for }\;\;\;\hat{e}(t) = \{e(t)|V_\mathcal{F}(t,e) \leq \alpha(t),\;t \in [t_0,t_f]\}. \nonumber
+\end{align}
+where $S(t)$ is the positive definite matrix representing the shape of the outer shell, and the volume of the ellipsoid is proportional to the determinant of $S(t)$.
+
+Based on these observations, we can formulate the optimization to find the tight funnel as follows:
+\begin{equation}
+\begin{array}{rl}
+\displaystyle{\inf_{P_\mathcal{F},\alpha}} & \int_{t_0}^{t_f} \det{S(t)}^{1/6}\text{d}t \nonumber \\
+\displaystyle{\text{s.t.}}& \dot{V}_\mathcal{F}(t,\hat{e}) < \dot{\alpha},\text{ for }\hat{e} = \{e|V_\mathcal{F}(t,e) = \alpha(t)\}, \nonumber \\
+& \hat{e}^\intercal S(t) \hat{e} \leq 1,\text{ for }\hat{e} = \{e|V_\mathcal{F}(t,e) \leq \alpha(t)\}, \nonumber \\
+& \xi_0 \subset \mathcal{F}(0,e).
+\end{array}
+\end{equation}
+
+\subsection{implementing into a numerical solver}
+\begin{align}
+\dot{V}_\mathcal{F} &= -e^\intercal Q_\mathcal{F} e \nonumber \\
+&\;\;\;+e^\intercal P_\mathcal{F} B(\Delta+\text{s}_\Phi|-Kpe_p -K_ve_v + ge_3 + \ddot{x}^r|\bar{u}) \nonumber
+\end{align}
+
+\begin{align}
+|&e^\intercal P_\mathcal{F} B(\Delta+\text{s}_\Phi|-K_p e_p -K_v e_v + ge_3 + \ddot{x}^r|\bar{u})| \nonumber \\
+&\leq |e^\intercal P_\mathcal{F}B|\{\bar{\Delta} + \bar{\text{s}}_\Phi(k_p|e_p| + k_v|e_v| + |ge_3+\ddot{x}^r|\} \nonumber \\
+&\leq (p_\mathcal{F}^{pv}|e_p|+p_\mathcal{F}^v|e_v|)\nonumber \\
+&\;\;\;\;\;\times \{\bar{\Delta}+\bar{\text{s}}_\Phi(k_p|e_p|+k_v|e_v|+|ge_3+\ddot{x}^r|)\} \nonumber \\
+&\leq (p_\mathcal{F}^{pv}\bar{e}_p+p_\mathcal{F}^v\bar{e}_v)\{\bar{\Delta}+\bar{\text{s}}_\Phi(k_p\bar{e}_p+k_v\bar{e}_v+|ge_3+\ddot{x}^r|)\} \nonumber 
+\end{align}
+
+
+
+
+
+
 \subsection{Definition of funnel}
 \subsection{Generating funnels with Sum of Squares programming}
 
