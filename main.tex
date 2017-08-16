@@ -148,7 +148,8 @@ The attitude error between $\textbf{q}^d$ and $\textbf{q}$ is denoted as $\textb
 \right.
 \end{equation}
 where $\omega_d^d$ is the desired angular velocity of $\textbf{q}^d$ represented in $\textbf{q}^d$.
-According to [ETH], the attitude error $\textbf{q}_e$ is globally asymptotically stable equilibrium point. Based on that, it is possible to assume that the error $\Phi$ is also asymptotically stable, and bounded by certain value $\Phi_\text{max}$.
+According to [ETH], the attitude error $\textbf{q}_e$ is globally asymptotically stable equilibrium point. 
+Based on that, it is possible to assume that the error $\Phi$ is also asymptotically stable, and bounded by certain value $\Phi_{\max}$.
 
 \subsection{Stability analysis}
 The attitude error is globally asymptotically stable.
@@ -257,34 +258,72 @@ The outer ellipsoid can be formulated such as
 \end{align}
 where $S(t)$ is the positive definite matrix representing the shape of the outer shell, and the volume of the ellipsoid is proportional to the determinant of $S(t)$.
 
-Based on these observations, we can formulate the optimization to find the tight funnel as follows:
+Based on these observations, we can formulate the optimization problem to find the tight funnel as follows:
 \begin{equation}
 \begin{array}{rl}
-\displaystyle{\inf_{P_\mathcal{F},\alpha}} & \int_{t_0}^{t_f} \det{S(t)}^{1/6}\text{d}t \nonumber \\
-\displaystyle{\text{s.t.}}& \dot{V}_\mathcal{F}(t,\hat{e}) < \dot{\alpha},\text{ for }\hat{e} = \{e|V_\mathcal{F}(t,e) = \alpha(t)\}, \nonumber \\
-& \hat{e}^\intercal S(t) \hat{e} \leq 1,\text{ for }\hat{e} = \{e|V_\mathcal{F}(t,e) \leq \alpha(t)\}, \nonumber \\
-& \xi_0 \subset \mathcal{F}(0,e).
+\displaystyle{\inf_{P_\mathcal{F},\alpha,S}} & \int_{t_0}^{t_f} \det{S(t)}\text{d}t \nonumber \\
+\displaystyle{\text{s.t.}}& \dot{V}_\mathcal{F}(t,\hat{e}) < \dot{\alpha}(t),\text{ for }\hat{e} = \{e(t)|V_\mathcal{F}(t,e) = \alpha(t)\}, \nonumber \\
+& \hat{e}^\intercal S(t) \hat{e} \leq 1,\text{ for }\hat{e} = \{e(t)|V_\mathcal{F}(t,e) \leq \alpha(t)\}, \nonumber \\
+%& \xi_0 \subset \mathcal{F}(0,e).
+& V_\mathcal{F}(t_0,\hat{e}) \leq \alpha(t_0),\text{ for }\hat{e} = \{e|e^\intercal R e \leq 1\}. \nonumber
 \end{array}
 \end{equation}
 
 \subsection{implementing into a numerical solver}
+First of all, the matrix $P_\mathcal{F}(t)$ is set as follows:
+\begin{equation}
+P_\mathcal{F}(t) = \left[
+\begin{array}{cc}
+P_p(t) & P_{pv}(t) \\
+P_{pv}(t) & P_v(t)
+\end{array}
+\right] \nonumber
+\end{equation}
+where $P_p(t)$, $P_{pv}(t)$, and $P_v(t)$ are diagonal matrices with positive entries.
+With $P_\mathcal{F}(t)$ and eq. \eqref{eq:lyapForFunnel}, the Lyapunov function $V_\mathcal{F} = \frac{1}{2}e^\intercal P_\mathcal{F}(t) e$ is analyzed as follows: 
 \begin{align}
-\dot{V}_\mathcal{F} &= -e^\intercal Q_\mathcal{F} e \nonumber \\
-&\;\;\;+e^\intercal P_\mathcal{F} B(\Delta+\text{s}_\Phi|-Kpe_p -K_ve_v + ge_3 + \ddot{x}^r|\bar{u}) \nonumber
+\dot{V}_\mathcal{F} &= -e^\intercal Q_\mathcal{F} e + e^\intercal \dot{P}_\mathcal{F} e\nonumber \\
+&\;\;\;+e^\intercal P_\mathcal{F} B(\Delta+\text{s}_\Phi|-K_pe_p -K_ve_v + ge_3 + \ddot{x}^r|\bar{u}) \nonumber
 \end{align}
-
+In the right hand side of the above equation, the third term further analyzed as
 \begin{align}
 |&e^\intercal P_\mathcal{F} B(\Delta+\text{s}_\Phi|-K_p e_p -K_v e_v + ge_3 + \ddot{x}^r|\bar{u})| \nonumber \\
 &\leq |e^\intercal P_\mathcal{F}B|\{\bar{\Delta} + \bar{\text{s}}_\Phi(k_p|e_p| + k_v|e_v| + |ge_3+\ddot{x}^r|\} \nonumber \\
-&\leq (p_\mathcal{F}^{pv}|e_p|+p_\mathcal{F}^v|e_v|)\nonumber \\
-&\;\;\;\;\;\times \{\bar{\Delta}+\bar{\text{s}}_\Phi(k_p|e_p|+k_v|e_v|+|ge_3+\ddot{x}^r|)\} \nonumber \\
-&\leq (p_\mathcal{F}^{pv}\bar{e}_p+p_\mathcal{F}^v\bar{e}_v)\{\bar{\Delta}+\bar{\text{s}}_\Phi(k_p\bar{e}_p+k_v\bar{e}_v+|ge_3+\ddot{x}^r|)\} \nonumber 
+&\leq (p_{pv}|e_p|+p_v|e_v|)\nonumber \\
+&\;\;\;\;\;\times \{\bar{\Delta}+\bar{\text{s}}_\Phi(k_p|e_p|+k_v|e_v|+|ge_3+\ddot{x}^r|)\} \nonumber
+%&\leq (p_{pv}\bar{e}_p+p_v\bar{e}_v)\{\bar{\Delta}+\bar{\text{s}}_\Phi(k_p\bar{e}_p+k_v\bar{e}_v+|ge_3+\ddot{x}^r|)\} \nonumber 
+\end{align}
+where $p_{pv}$, $p_v$, $k_p$, and $k_v$ are maximum eigenvalues of $P_{pv}$, $P_v$, $K_p$, and $K_v$.
+%where $p_{pv} = \lambda_{\max} (P_{pv})$, 
+%$P_v = \lambda_{\max} (P_v)$, 
+%$k_p = \lambda_{\max} (K_p)$, 
+%and $k_v = \lambda_{\max} (K_v)$.
+
+
+
+\begin{align}
+&
+\begin{array}{rl}
+\displaystyle{\inf_{P_\mathcal{F}(n),\alpha(n),S(n),p_{pv}(n),p_v(n)}} & \sum_{n=0}^{N} \det(S(n)) \nonumber \\
+\end{array} \nonumber \\
+&
+\begin{array}{rl}
+\displaystyle{\text{s.t.}}& \dot{\alpha}(n) - \dot{V}_\mathcal{F}(n) \geq 0,\text{ when $c_1$ to $c_9$ are satisfied}, \nonumber \\
+& 1-e^\intercal S(n) e \geq 0,\text{ when $c_1$ and $c_{10}$ are satisfied}, \nonumber \\
+& \alpha(0) - V_\mathcal{F}(0) \geq 0,\text{ when $c_{11}$ is satisfied}. \nonumber
+\end{array} \nonumber 
 \end{align}
 
-
-
-
-
+\begin{equation}
+\begin{array}{rlrl}
+c_1:& \bar{e}_p^2 = e_p^Te_p,           & c_2:&\bar{e}_p \geq 0 \\
+c_3:& \bar{e}_v^2 = e_v^Te_v,           & c_4:&\bar{e}_v \geq 0 \\
+c_5:& p_{pv}(n)I_3 \geq P_{pv}(n),      & c_6:&p_{pv}(n)I_3 \geq -P_{pv}(n) \\
+c_7:& p_{ v}(n)I_3 \geq P_{ v}(n),      & c_8:&p_{ v}(n)I_3 \geq -P_{ v}(n) \\
+c_9:& \alpha(n) - V_\mathcal{F}(n) = 0, & c_{10}:&S(n) > 0 \\
+c_{11}:& 1-e^\intercal R e = 0. &&
+\end{array} \nonumber
+\end{equation}
 
 \subsection{Definition of funnel}
 \subsection{Generating funnels with Sum of Squares programming}
