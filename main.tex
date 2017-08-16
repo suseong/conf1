@@ -261,7 +261,7 @@ where $S(t)$ is the positive definite matrix representing the shape of the outer
 Based on these observations, we can formulate the optimization problem to find the tight funnel as follows:
 \begin{equation}
 \begin{array}{rl}
-\displaystyle{\inf_{P_\mathcal{F},\alpha,S}} & \int_{t_0}^{t_f} \det{S(t)}\text{d}t \nonumber \\
+\displaystyle{\inf_{P_\mathcal{F},\alpha,S}} & \int_{t_0}^{t_f} \det{S(t)}\text{d}t \label{eq:optim1} \\
 \displaystyle{\text{s.t.}}& \dot{V}_\mathcal{F}(t,\hat{e}) < \dot{\alpha}(t),\text{ for }\hat{e} = \{e(t)|V_\mathcal{F}(t,e) = \alpha(t)\}, \nonumber \\
 & \hat{e}^\intercal S(t) \hat{e} \leq 1,\text{ for }\hat{e} = \{e(t)|V_\mathcal{F}(t,e) \leq \alpha(t)\}, \nonumber \\
 %& \xi_0 \subset \mathcal{F}(0,e).
@@ -287,33 +287,49 @@ With $P_\mathcal{F}(t)$ and eq. \eqref{eq:lyapForFunnel}, the Lyapunov function 
 \end{align}
 In the right hand side of the above equation, the third term further analyzed as
 \begin{align}
-|&e^\intercal P_\mathcal{F} B(\Delta+\text{s}_\Phi|-K_p e_p -K_v e_v + ge_3 + \ddot{x}^r|\bar{u})| \nonumber \\
-&\leq |e^\intercal P_\mathcal{F}B|\{\bar{\Delta} + \bar{\text{s}}_\Phi(k_p|e_p| + k_v|e_v| + |ge_3+\ddot{x}^r|\} \nonumber \\
-&\leq (p_{pv}|e_p|+p_v|e_v|)\nonumber \\
-&\;\;\;\;\;\times \{\bar{\Delta}+\bar{\text{s}}_\Phi(k_p|e_p|+k_v|e_v|+|ge_3+\ddot{x}^r|)\} \nonumber
-%&\leq (p_{pv}\bar{e}_p+p_v\bar{e}_v)\{\bar{\Delta}+\bar{\text{s}}_\Phi(k_p\bar{e}_p+k_v\bar{e}_v+|ge_3+\ddot{x}^r|)\} \nonumber 
+&e^\intercal P_\mathcal{F} B(\Delta+\text{s}_\Phi|-K_p e_p -K_v e_v + ge_3 + \ddot{x}^r|\bar{u}) \nonumber \\
+&\leq |e^\intercal P_\mathcal{F}B|\{\bar{\Delta} + \bar{\text{s}}_\Phi(k_p|e_p| + k_v|e_v| + \bar{T}\} \nonumber \\
+&\leq (p_{pv}|e_p|+p_v|e_v|)\{\bar{\Delta}+\bar{\text{s}}_\Phi(k_p|e_p|+k_v|e_v|+\bar{T})\} \label{eq:normAnalysis}
 \end{align}
 where $p_{pv}$, $p_v$, $k_p$, and $k_v$ are maximum eigenvalues of $P_{pv}$, $P_v$, $K_p$, and $K_v$.
-%where $p_{pv} = \lambda_{\max} (P_{pv})$, 
-%$P_v = \lambda_{\max} (P_v)$, 
-%$k_p = \lambda_{\max} (K_p)$, 
-%and $k_v = \lambda_{\max} (K_v)$.
+Not to make the analysis too conservative, 
+we define two variables $\bar{e}_p\in\mathbb{R}$ and $\bar{e}_v\in\mathbb{R}$ to be able to substitute the norm of $e_p$ and $e_v$ in eq. \eqref{eq:normAnalysis} with the following constraints:
+\begin{equation}
+\begin{array}{ll}
+\bar{e}_p^2 = e_p^\intercal e_p, & \bar{e}_p \geq 0 \\
+\bar{e}_v^2 = e_v^\intercal e_v, & \bar{e}_v \geq 0. \\
+\end{array} \label{eq:ebarConst} 
+\end{equation} 
+Then, $\dot{V}_\mathcal{F}$ is further developed as follows:
+\begin{align}
+\dot{V}_\mathcal{F} &= -e^\intercal Q_\mathcal{F} e + e^\intercal \dot{P}_\mathcal{F}e \label{eq:vdot} \\
+ &\;\;\;\;+(p_{pv}\bar{e}_p+p_v\bar{e}_v)\{\bar{\Delta} + \bar{\text{s}}_\Phi(k_p\bar{e}_p+k_v\bar{e}_v + \bar{T})\} \nonumber 
+\end{align}
+with the constraints in eq. \eqref{eq:ebarConst}.
 
-
-
+In eq. \eqref{eq:optim1}, the variables of the optimization problem are continuous in $t$. 
+To make the optimization problem easy to solve, 
+%we discretized all the variables $e_p$, $e_v$, $\bar{e}_p$, $\bar{e}_v$, $P_\mathcal{F}$, $\alpha$, and $S$. 
+we discretized all the variables $P_\mathcal{F}$, $\alpha$, and $S$. 
+Then, the optimization problem can be reformulated as the following:
 \begin{align}
 &
 \begin{array}{rl}
 \displaystyle{\inf_{P_\mathcal{F}(n),\alpha(n),S(n),p_{pv}(n),p_v(n)}} & \sum_{n=0}^{N} \det(S(n)) \nonumber \\
 \end{array} \nonumber \\
 &
+%\begin{array}{rl}
+%\displaystyle{\text{s.t.}}& \dot{\alpha}(n) - \dot{V}_\mathcal{F}(n) \geq 0,\text{ when $c_1$ to $c_9$ are satisfied}, \nonumber \\
+%& 1-e^\intercal S(n) e \geq 0,\text{ when $c_1$ and $c_{10}$ are satisfied}, \nonumber \\
+%& \alpha(0) - V_\mathcal{F}(0) \geq 0,\text{ when $c_{11}$ is satisfied}. \nonumber
+%\end{array} \nonumber 
 \begin{array}{rl}
-\displaystyle{\text{s.t.}}& \dot{\alpha}(n) - \dot{V}_\mathcal{F}(n) \geq 0,\text{ when $c_1$ to $c_9$ are satisfied}, \nonumber \\
-& 1-e^\intercal S(n) e \geq 0,\text{ when $c_1$ and $c_{10}$ are satisfied}, \nonumber \\
-& \alpha(0) - V_\mathcal{F}(0) \geq 0,\text{ when $c_{11}$ is satisfied}. \nonumber
+\displaystyle{\text{s.t.}}& \dot{\alpha}(n) - \dot{V}_\mathcal{F}(n) \geq 0,\text{ with constraints $c_1$ to $c_9$}, \nonumber \\
+& 1-e^\intercal S(n) e \geq 0,\text{ with constraints $c_1$ and $c_{10}$}, \nonumber \\
+& \alpha(0) - V_\mathcal{F}(0) \geq 0,\text{ with constraint $c_{11}$}. \nonumber
 \end{array} \nonumber 
 \end{align}
-
+where
 \begin{equation}
 \begin{array}{rlrl}
 c_1:& \bar{e}_p^2 = e_p^Te_p,           & c_2:&\bar{e}_p \geq 0 \\
@@ -324,6 +340,13 @@ c_9:& \alpha(n) - V_\mathcal{F}(n) = 0, & c_{10}:&S(n) > 0 \\
 c_{11}:& 1-e^\intercal R e = 0. &&
 \end{array} \nonumber
 \end{equation}
+Here, $\dot{P}_\mathcal{F}(n)$ and $\dot{\alpha}(n)$ could be implemented as
+\begin{equation}
+\begin{array}{cc}
+\dot{P}_\mathcal{F}(n) = \frac{P_\mathcal{F}(n+1) - P_\mathcal{F}(n)}{\text{d}t} & \dot{\alpha}(n) = \frac{\alpha(n+1)-\alpha(n)}{\text{d}t} 
+\end{array} \nonumber
+\end{equation}
+
 
 \subsection{Definition of funnel}
 \subsection{Generating funnels with Sum of Squares programming}
