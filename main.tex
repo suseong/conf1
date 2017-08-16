@@ -212,10 +212,10 @@ Therefore, eq. \eqref{eq:translationalError} could be considered as an input-to-
 Also, the norm of $L$ is a monotonic function of $\text{s}_\Phi$. By increasing the attitude error, the norm of $L$ will get larger. 
 Accordingly, the error $|e|$ will be bounded with larger radius. 
 %It implies that the attitude control should be achieved as accurate as possible. 
-Finally, the norm of the error $|e|$ will enter the ball with radius $\gamma$ which is [KHALIL] 
-\begin{equation}
-\gamma = \frac{\lambda_{\max}(P)}{\lambda_{\min}(P)}|L|\;|[\bar{\Delta}\;\;\bar{T}]|. \nonumber
-\end{equation}
+Finally, the norm of the error $|e|$ will enter the ball with radius $\gamma$ which is $\gamma = \frac{\lambda_{\max}(P)}{\lambda_{\min}(P)}|L|\;|[\bar{\Delta}\;\;\bar{T}]|$ [KHALIL].
+%\begin{equation}
+%\gamma = \frac{\lambda_{\max}(P)}{\lambda_{\min}(P)}|L|\;|[\bar{\Delta}\;\;\bar{T}]|. \nonumber
+%\end{equation}
 
 \section{Computing funnels}
 Heretofore, the stability of the translational motion of a multirotor has been analyzed. 
@@ -347,7 +347,10 @@ c_9:& \alpha(n) - V_\mathcal{F}(n) = 0, & c_{10}:&S(n) > 0 \\
 c_{11}:& 1-e^\intercal R e = 0. &&
 \end{array} \nonumber
 \end{equation}
-The constraints $c_5$ to $c_8$ is added to ensure $p_{pv}(n) \geq \lambda_{\max}(P_{pv}(n))$ and $p_v(n) \geq \lambda_{\max}(P_v(n))$ with diagonal matrices $P_{pv}(n)$ and $P_v(n)$.
+The constraints $c_5$ to $c_8$ is added to ensure
+% $p_{pv}(n) \geq \lambda_{\max}(P_{pv}(n))$ and $p_v(n) \geq \lambda_{\max}(P_v(n))$ 
+ $p_{pv}(n) \geq \|P_{pv}(n)\|$ and $p_v(n) \geq \|P_v(n)\|$ 
+with diagonal matrices $P_{pv}(n)$ and $P_v(n)$.
 In addition, $\dot{P}_\mathcal{F}(n)$ and $\dot{\alpha}(n)$ could be implemented as
 \begin{equation}
 \begin{array}{cc}
@@ -355,6 +358,18 @@ In addition, $\dot{P}_\mathcal{F}(n)$ and $\dot{\alpha}(n)$ could be implemented
 \end{array} \nonumber
 \end{equation}
 The optimization problem in eq. \eqref{eq:optim2} could be transformed into the form of sum-of-squares problem and solved efficiently by referring [MAJ].
+
+\subsection{Funnel library}
+In real applications, the external force, magnitude of nominal thrust to generate would vary in accordance with flight conditions.
+To be able to see how the error would progress in various situations, 
+we generate funnels with different settings on the initial set of error $\xi_0$, the attitude control accuracy $\bar{\text{s}}_\Phi$, 
+the magnitude of the lumped disturbances $\bar{\Delta}$, and nominal magnitude of thrust $\bar{T}$.
+
+
+
+
+
+
 
 \section{CONCLUSIONS}
 
