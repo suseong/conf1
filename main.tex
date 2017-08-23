@@ -84,23 +84,39 @@ This paper is about robust trajectory generation for quadrotor type UAVs using f
 my mind is blank.
 Transient. Disturbance. Model uncertainties. and so on.
 
+Throughout the paper, $0_{ij}$ stands for the zero matrix in $\mathbb{R}^{i\times j}$, and $I_i$ denotes the identity matrix in $\mathbb{R}^{i\times i}$. 
+For a matrix, $\|\cdot\|$ represents the induced 2 norm, and $\lambda_{\max}(\cdot)$ and $\lambda_{\min}(\cdot)$ indicate the maximum and minimum eigenvalues.
+Also, $|\cdot|$ is the Euclidean norm for a vector. 
+For two vectors $\alpha,\beta \in \mathbb{R}^{3\times 1}$, 
+we denote the inner and cross products as $\langle \alpha,\beta\rangle = \alpha^\top \beta$ and $\textbf{S}(\alpha)\beta = \alpha \times \beta$. 
+For two quaternions $\mathbf{q}_1$ and $\mathbf{q}_2$, the quaternion multiplication expressed as $\mathbf{q}_1\otimes\mathbf{q}_2$. 
+Also, $\textbf{P}(\cdot)$ is the quaternion representation of a vector $\omega\in\text{so}(3)$ such as $\textbf{P} = [0\;\omega^\top]^\top$. 
+The rotation of a vector is indicated as $\mathbf{q}_1\odot\omega = \textbf{q}_1\otimes\textbf{P}(\omega)\otimes\textbf{q}^{-1}$. 
+Furthremore, $\text{c}\cdot$ and $\text{s}\cdot$ are shorthands of $\cos\cdot$ and $\sin\cdot$, respectively.
+
 \section{Quadrotor dynamics and control}
 
 \subsection{Quadrotor dynamics}
 To describe the dynamic model of a multirotor, we define the inertial $O_I\{x_I,y_I,z_I\}$ and the multirotor body-fixed $O_b\{x_b,y_b,z_b\}$ frames. The body-fixed frame is located at the center of the multirotor. 
 The translational and angular dynamics of a multirotor is described as follows:
 \begin{align}
-\ddot{x} &= gz_I + Tz_b + \Delta \label{eq:translational} \\
+\ddot{p} &= gz_I + Tz_b + F_d + \Delta \label{eq:translational} \\
 \dot{\textbf{q}} &= \textstyle{\frac{1}{2}}\textbf{q}\otimes \text{P}(\omega) \label{eq:rotational}
 \end{align}
-where $x$ is the position of $O_b$ with respect to $O_I$, and $\textbf{q} = [q_0\;\bar{q}^\intercal]^\intercal$ is the unit quaternion describing the orientation of $O_b$ with respect to $O_I$.
+where $p$ is the position of $O_b$ with respect to $O_I$, and $\textbf{q} = [q_0\;\bar{q}^\top]^\top$ is the unit quaternion describing the orientation of $O_b$ with respect to $O_I$.
 The angular velocity of $O_b$ represented in $O_b$ is denoted as $\omega$.
-The external forces and model uncertainties are lumped in $\Delta \in \mathbb{R}^{3\times 1}$. 
 The terms $g$ and $T$ are gravitational constant and mass normalized collective thrust, respectively. 
-Without loss of generality, the axis $z_I$ is defined as $e_3 = [0\;0\;1]^\intercal$.
-Also, the operator $\otimes$ represents quaternion multiplication and $\text{P}(\cdot)$ is the quaternion representation of a vector ${\omega} \in \text{so}(3)$ as $\text{P}({\omega}) = [0\;{\omega}^\intercal]^\intercal$. 
+Without loss of generality, the axis $z_I$ is defined as $e_3 = [0\;0\;1]^\top$.
+%Also, the operator $\otimes$ represents quaternion multiplication and $\text{P}(\cdot)$ is the quaternion representation of a vector ${\omega} \in \text{so}(3)$ as $\text{P}({\omega}) = [0\;{\omega}^\top]^\top$. 
+The rotor drag applied on the multirotor is denoted as $F_a$, and it is explicitly expressed as follows:
+\begin{equation}
+F_d = \alpha\textbf{q}\odot\pi_z\textbf{q}^{-1}\odot \dot{p} \label{eq:rotorDrag}
+\end{equation}
+where $\alpha$ is the rotor drag coefficient, $\pi_z = I_3 - e_3^\top e_3$ is the matrix projecting a vector onto the $x_by_b$ plane.
+%, and the operator $\odot$ denotes quaternion rotation such as $\textbf{q}\odot r = \textbf{q}\otimes\text{P}(r)\otimes\textbf{q}^{-1}$.
+The external forces and model uncertainties excluding the rotor drag term are lumped in $\Delta \in \mathbb{R}^{3\times 1}$. 
 
-In eq.\eqref{eq:rotational}, angular velocity $\omega$ is used as the input term since the rotational velocity dynamics is fast enough. 
+In eq. \eqref{eq:rotational}, angular velocity $\omega$ is used as the input term since the rotational velocity dynamics is fast enough. 
 %the rotational motion of a quadrotor is described with the kinematic relation. 
 It is possible based on the assumption that the multirotor body angular rate $\omega$ could be directly controlled with low-level controllers such as [DANDREA] or off-the-shelf flight controllers supporting angular rate control mode.
 Therefore, the input terms of the multirotor dynamics in eqs. \eqref{eq:translational} and \eqref{eq:rotational} are $T$ and $\omega$.
@@ -111,38 +127,39 @@ The rotor drag could be modeled as, and the fuselage drag could be blah blah.
 Non perfect input tracking, XXX
 
 \subsection{Multirotor control} \label{sec:controller}
-Let us assume that the reference trajectory of the differential flat output[MEL], which are $\{x(t)^r,\psi^r(t)\}$ and $\mathcal{C}^2$, are given.
-Here, ${x}^r(t)$ is the reference trajectory of the multirotor, and $\psi$ represents the reference rotation of the multirotor about the $z_b$ body axis, i.e. yaw angle in Euler attitude representation.
+Let us assume that the reference trajectory of the differential flat output[MEL], which are $\{p(t)^r,\psi^r(t)\}$ and $\mathcal{C}^2$, are given.
+Here, $p^r(t)$ is the reference trajectory of the multirotor, and $\psi(t)$ represents the reference rotation of the multirotor about the $z_b$ body axis, i.e. yaw angle in the Euler attitude representation.
 
 To control the translational motion of a multirotor, we utilized a geometric control method [TYL] which is widely utilized in the researches on multirotors [RPG][UPENN][MIT].
-Let $e_p = x - x_r$ and $e_v = \dot{x} - \dot{x}_r$ represent position and velocity error with respect to the reference trajectory.
-With the above definitions, the mass normalized thrust $T$  and desired thrust direction of a multirotor $z_b^d$ could be computed as the following procedure:
+Let $e_p = p - p^r$ and $e_v = \dot{p} - \dot{p}^r$ be the position and velocity error terms.
+With the above definitions, the mass normalized thrust $T$ and desired thrust direction of a multirotor $z_b^d$ could be computed as the following procedure:
 \begin{align}
-\ddot{x}^{d} &= -K_p e_p - K_v e_v -ge_3 + \ddot{x}^r \nonumber \\
+\ddot{p}^{d} &= -K_p e_p - K_v e_v -ge_3 + \ddot{p}^r \label{eq:ddpd} \\
 %z_b^{d} &= \frac{\ddot{x}^{d}}{\|\ddot{x}^{d}\|} \nonumber \\
-z_b^{d} &= \ddot{x}^{d}/|\ddot{x}^{d}| \nonumber \\
-T &= \langle \ddot{x}^{d}, z_b \rangle = |\ddot{x}^{d}|\langle z_b^d, z_b \rangle \nonumber 
+z_b^{d} &= \ddot{p}^{d}/|\ddot{p}^{d}| \nonumber \\
+T &= \langle \ddot{p}^{d}, z_b \rangle = |\ddot{p}^{d}|\langle z_b^d, z_b \rangle \nonumber 
 \end{align}
 where $K_p$ and $K_v$ are gain matrices with positive diagonal entries.
-By substituting the terms $T$ and $\ddot{x}^d$ in \eqref{eq:translational}, the error dynamics of the translational motion could be derived as follows:
+By substituting the terms $T$ and $\ddot{p}^d$ in \eqref{eq:translational}, the error dynamics of the translational motion could be derived as follows:
 \begin{align}
-\ddot{e}_p &= ge_3 + Tz_b + \Delta - \ddot{x}^r + \ddot{x}^d - \ddot{x}^d \nonumber \\
-%&= ge_3 + \ddot{x}^d + \Delta -\ddot{x}^r + Tz_b - \ddot{x}^d \nonumber \\
-&= -K_pe_p -K_ve_v + \Delta + Tz_b - \ddot{x}^d \nonumber \\
-%&= -K_pe_p -K_ve_v + \Delta + |\ddot{x}^d|(z_b^d\cdot z_b)z_b - |\ddot{x}^d|z_b^d \nonumber \\
-&= -K_pe_p -K_ve_v + \Delta + |\ddot{x}^d|\{\langle z_b^d, z_b \rangle z_b - z_b^d\}. \label{eq:translationalError1}
+%\dot{e}_p &= e_v \nonumber \\
+\ddot{e}_p &= ge_3 + Tz_b + F_d + \Delta - \ddot{p}^r + \ddot{p}^d - \ddot{p}^d \nonumber \\
+&= -K_pe_p -K_ve_v + F_d + \Delta + Tz_b - \ddot{p}^d \nonumber \\
+&= -K_pe_p -K_ve_v + F_d + \Delta + |\ddot{p}^d|\{\langle z_b^d, z_b \rangle z_b - z_b^d\} \nonumber \\
+&= -K_pe_p -K_ve_v + F_d + \Delta +  |\ddot{p}^d|\text{s}_\Phi u \label{eq:translationalError1}
 \end{align}
-The term inside of the curly bracket could be represented as $\text{s}_\Phi \bar{u}$ with some unit vector $\bar{u}$ as drawn in fig. 2.
+%where $\text{s}_\Phi u$ is the term inside of the curly bracket with
+where $\Phi$ is the angle between the axes $z_b$ and $z_b^d$, and $u$ is the unit vector indicating the direction of the term inside of the curly bracket.
 
 Similarly, the rotational motion of a multirotor could be analyzed by combining it with a control law that generates the desired angular rate $\omega^d$. 
 First, we compute the desired attitude of the multirotor with $\psi(t)$ and $z_b^d$ as follows: [MEL]
 \begin{align}
-\bar{y}_b &= [\begin{array}{ccc}-\text{s}_{\psi^r}&\text{c}_{\psi^r}&0\end{array}]^\intercal \nonumber \\
-x_b^d &= \text{S}(\bar{y}_b)z_b^d / \|\text{S}(\bar{y}_b)z_b^d \| \nonumber \\ 
-y_b^d &= \text{S}({z}_b^d)x_b^d / \|\text{S}(z_b^d)x_b^d \|. \nonumber  
+\bar{y}_b &= [\begin{array}{ccc}-\text{s}_{\psi^r}&\text{c}_{\psi^r}&0\end{array}]^\top \nonumber \\
+x_b^d &= \text{S}(\bar{y}_b)z_b^d / |\text{S}(\bar{y}_b)z_b^d | \nonumber \\ 
+y_b^d &= \text{S}({z}_b^d)x_b^d / |\text{S}(z_b^d)x_b^d |. \nonumber  
 \end{align}
 Then, based on the axes $\{x_b^d,y_b^d,z_b^d\}$, the desired coordinate could be represented with the unit quaternion $\textbf{q}^d$. 
-The attitude error between $\textbf{q}^d$ and $\textbf{q}$ is denoted as $\textbf{q}_e = \textbf{q}^{-1}\otimes \textbf{q}^d$. To decrease the attitude error $\textbf{q}_e = [q_e\;\bar{q}_e^\intercal]^\intercal$, the angular velocity is set as 
+The attitude error between $\textbf{q}^d$ and $\textbf{q}$ is denoted as $\textbf{q}_e = \textbf{q}^{-1}\otimes \textbf{q}^d$. To decrease the attitude error $\textbf{q}_e = [q_e\;\bar{q}_e^\top]^\top$, the angular velocity is set as 
 \begin{equation}
 \omega = \left\{
 \begin{array}{ll}
@@ -162,60 +179,147 @@ Furthermore, the maximum thrust axis error is bounded such as $\text{s}_\Phi \le
 
 \subsection{Stability analysis}
 In Sec. \ref{sec:controller}, it is concluded that the attitude error is globally asymptotically stable.
-On the other hand, the translational position and velocity errors, which are denoted as $e = [e_p^\intercal\;e_v^\intercal]^\intercal$ could be considered as input-to-state stable by considering $\text{s}_\Phi$ and $\Delta$ as input terms. To prove that, the error dynamics in eq. \eqref{eq:translationalError1} is rewritten as follows: 
+On the other hand, the translational position and velocity errors could be considered as input-to-state stable by considering $\text{s}_\Phi$, $|\dot{p}^r|$, and $\Delta$ as input terms. 
+To prove that, the error dynamics in eq. \eqref{eq:translationalError1} is summarized as follows: 
+\begin{align}
+\dot{e}_p &= e_v \nonumber \\
+\dot{e}_v &= -K_pe_p-K_ve_v+F_d+\Delta+|\ddot{p}^d|\text{s}_\Phi u \nonumber
+\end{align}
+%\begin{equation}
+%\dot{e} = Ae
+% + B\{\Delta+|\ddot{x}^d|\text{s}_\Phi\bar{u}\} \label{eq:translationalError} 
+%\end{equation}
+%where
+%\begin{equation}
+%A = \left[
+%\begin{array}{rr}
+%0_{33} & I_3 \\ -K_p & -K_d 
+%\end{array}
+%\right],\;\;\;B = \left[
+%\begin{array}{r}
+%0_{33} \\ I_3
+%\end{array}
+%\right] 
+%\end{equation}
+To analyze the stability of the error dynamics conveniently, we assume that $K_p = k_pI_3$ and $K_v = k_vI_3$. Then, we define the Lyapunov candidate function such as
 \begin{equation}
-\dot{e} = Ae
- + B\{\Delta+|\ddot{x}^d|\text{s}_\Phi\bar{u}\} \label{eq:translationalError} 
-\end{equation}
-where
-\begin{equation}
-A = \left[
+V = \frac{1}{2} e^\top 
+\left[
 \begin{array}{rr}
-0_{33} & I_3 \\ -K_p & -K_d 
+(k_p+k_d)I_3 & I_3 \\ I_3 & I_3
 \end{array}
-\right],\;\;\;B = \left[
-\begin{array}{r}
-0_{33} \\ I_3
+\right]e \nonumber
+\end{equation}
+where $e = [e_p^\top\;e_v^\top]^\top$. The Lyapunov function is positive definite when $k_p + k_v > 1$.
+Also, the directional derivative of $V$ can be summarized as follows:
+\begin{align}
+\dot{V} &= -k_p e_p^\top e_p -k_v e_v^\top e_v + e_v^\top e_v \nonumber \\
+&\;\;\;\;+(e_p+e_v)^\top\{\Delta + F_d + |\ddot{p}^d|\text{s}_\Phi u\}.
+\end{align}
+By having eq. \eqref{eq:ddpd}, $|\Delta|\leq\bar{\Delta}$, $|F_d| \leq \alpha|\dot{p}^r+e_v|$, and $|\text{s}_\Phi u| < \bar{\text{s}}_\Phi$, we can rearrange the above relation further as
+\begin{align}
+\dot{V} &\leq -k_p|e_p|^2 -(k_v+1)|e_v|^2 +(|e_p| + |e_v|) \times \nonumber \\
+&\;\;\;\;\{\bar{\Delta} + \alpha|\dot{p}^r+e_v|+\bar{\text{s}}_\Phi|-k_pe_p-k_ve_v+ge_3+\ddot{p}^r|\} \nonumber \\
+&\leq -\bar{e}^TQ\bar{e} + (\bar{\Delta}+\alpha|\dot{p}^r|+\bar{s}_\Phi\bar{T})|\bar{e}| \label{eq:dotV}
+\end{align} 
+where $\bar{e} = [|e_p|\;|e_v|]^\top$ and
+\begin{align}
+Q &= \left[
+\begin{array}{rr}
+k_p(1-\bar{s}_\Phi) & -\frac{1}{2}\{\alpha+\bar{s}_\Phi(k_p+k_d)\} \\
+-\frac{1}{2}\{\alpha+\bar{s}_\Phi(k_p+k_d)\} & k_v(1-\bar{s}_\Phi)-1-\alpha 
 \end{array}
-\right] 
-\end{equation}
-where $0_{ab} \in \mathbb{R}^{a\times b}$ and $I_a\in\mathbb{R}^{a\times a}$ are zero and identity matrices, respectively.
-Since the gain matrices $K_p$ and $K_v$ are designed to make the system matrix $A$ Hurwitz, we can find the positive definite matrix $P$ satisfying $PA + A^\intercal P < 0$. Accordingly, it is possible to define $Q = -\frac{1}{2}(PA +A^\intercal P) \geq 0$. 
-Furthermore, it is assumed that the axis $z_b$ tracks $z_b^d$ with sufficient accuracy so that the following condition is satisfied.
-\begin{equation}
-\text{s}_\Phi < {\frac{\nu}{\eta_p\eta_k}} \label{eq:angleCondition}
-\end{equation}
-where 
-$\nu = \lambda_{\min}(Q)$, $\eta_p = \lambda_{\max}(P)$, and $\eta_k = \lambda_{\max}(\text{blockdiag}\{K_p,K_v\})$.
-Here, $\lambda(\cdot)$ means the eigenvalue of the corresponding matrix.
-Then, with the Lyapunov candidate function $V = \frac{1}{2}e^\intercal P e$, the stability analysis on eq. \eqref{eq:translationalError} can be carried out as follows: 
-\begin{align}
-\dot{V} &= \textstyle{\frac{1}{2}}e^\intercal (PA + A^\intercal P)e + e^\intercal P B (\Delta + \text{s}_\Phi|\ddot{x}^d|\bar{u}) \nonumber \\
-&= -e^\intercal Q e \label{eq:lyapForFunnel} \\
-&\;\;\;\; + e^\intercal P B (\Delta + \text{s}_\Phi |-K_p e_p - K_v e_v +ge_3+{\ddot{x}}^r|\bar{u}) \nonumber  \\
-&\leq -\nu |e|^2 + \eta_p|e|\{\bar{\Delta}+\bar{\text{s}}_\Phi(\eta_k|e|+\bar{T})\} \nonumber \\
-&\leq (-\nu + \bar{\text{s}}_\Phi\eta_p\eta_k)|e|^2 + \eta_p\{\bar{\Delta} + \bar{\text{s}}_\Phi\bar{T}\}|e|. \label{eq:lyapForISS} 
+\right].\nonumber 
+%\\
+%L &=  (\bar{\Delta}+\alpha|\dot{p}^r| + \bar{\text{s}}_\Phi\bar{T})\left[
+%\begin{array}{cc}
+%1&1
+%\end{array}
+%\right]. \label{eq:QL}
 \end{align}
-With the condition in eq. \eqref{eq:angleCondition}, it is clear that $-\nu+\text{s}_\Phi\eta_p\eta_k < 0$. 
-To find the region of $e$ satisfying $\dot{V} < 0$, we rearrange eq. \eqref{eq:lyapForISS} as follows:
-\begin{align}
-\dot{V} &\leq (-\nu+\bar{\text{s}}_\Phi\eta_p\eta_k)\theta|e|^2 + (-\nu+\bar{\text{s}}_\Phi\eta_p\eta_k)(1-\theta)|e|^2 \nonumber \\
-&\;\;\;\;\;+\eta_p\{\bar{\Delta} + \bar{\text{s}}_\Phi \bar{T}\}|e| \nonumber 
-\end{align}
-where $0<\theta<1$. 
-Then, 
+Here, the matrix $Q$ can be considered as two separated parts such as
 \begin{equation}
-\dot{V} \leq (-\nu+\bar{\text{s}}_\Phi\eta_p\eta_k)\theta|e|^2,\;\;\; \forall |e| \geq L \left[\begin{array}{ll}\bar{\Delta} & \bar{T}\end{array}\right]^\intercal \label{eq:forConstraint} 
+Q = Q_A + \bar{\text{s}}_\Phi Q_B \nonumber
+\end{equation}
+where
+\begin{align}
+Q_A &= \left[
+\begin{array}{rr}
+k_p & -\frac{1}{2}\alpha \\ -\frac{1}{2}\alpha & k_v-1-\alpha
+\end{array}
+\right] \nonumber \\
+Q_B &= \left[
+\begin{array}{rr}
+-k_p & -\frac{1}{2}(k_p+k_v) \\ -\frac{1}{2}(k_p+k_v) & -k_v
+\end{array}
+\right].
+\end{align}
+By setting $k_v > 1+\alpha$ and $k_p > \frac{\alpha^2}{4(k_v-1-\alpha)}$, we can make the matrix $Q_A$ positive definite. 
+On the other hand, the matrix $Q_B$ cannot be positive definite. The determinant of $Q_B$ is $\text{det}(Q_B) = -\frac{1}{4}(k_p-k_v)^2 \leq 0$ so that $\lambda_{\max}(Q_B)\geq0$ and $\lambda_{\min}(Q_B)\leq 0$.
+However, even though $Q_B$ is not positive definite, we can assure that the matrix $Q$ is positive definite with the condition $\bar{\text{s}}_\Phi < -\lambda_{\min}(Q_A)/\lambda_{\min}(Q_B)$
+which could readly be achieved since $\bar{\text{s}}_\Phi \approx 0$ with a well designed attitude controller.
+Therefore, with the gain values $k_p$ and $k_v$ fulfilling $\lambda_{\min}(Q) \geq 0$, eq. \eqref{eq:dotV} is rearranged further as
+\begin{align}
+\dot{V} &\leq -\lambda_{\min}(Q)|\bar{e}|^2 + (\bar{\Delta}+\alpha|\dot{p}^r|+\bar{s}_\Phi\bar{T})\bar{e} \nonumber \\
+&\leq -\lambda_{\min}(Q)\theta|\bar{e}|^2-\lambda_{\min}(Q)(1-\theta)|\bar{e}|^2 \nonumber \\
+&\;\;\;\;+ (\bar{\Delta}+\alpha|\dot{p}^r|+\bar{s}_\Phi\bar{T})|\bar{e}| \nonumber
+\end{align}
+where $0<\theta<1$. Finally, 
+\begin{equation}
+\dot{V} \leq -\lambda_{\min}(Q)\theta|\bar{e}|^2,\;\;\forall|\bar{e}| \geq L\left[
+\begin{array}{ccc}
+\bar{\Delta}&|\dot{p}^r|&\bar{T}
+\end{array}
+\right]^\top
+%\frac{|L|}{\lambda_{\min(Q)}(1-\theta)}. \nonumber
 \end{equation}
 where
 \begin{equation}
-L = \frac{\eta_p}{(\nu-\bar{\text{s}}_\Phi\eta_p\eta_k)(1-\theta)}[\begin{array}{cc}1 & \bar{\text{s}}_\Phi \end{array}]. \nonumber
+L = \frac{1}{\lambda_{\min}(Q)(1-\theta)}\left[
+\begin{array}{ccc}
+1&\alpha&\bar{\text{s}}_\Phi 
+\end{array}
+\right].
 \end{equation}
-Therefore, eq. \eqref{eq:translationalError} could be considered as an input-to-state stable system with the norm of disturbance $\bar{\Delta}$ and nominal mass normalized collective thrust $\bar{T}$ as input terms.
-Also, the norm of $L$ is a monotonic function of $\bar{\text{s}}_\Phi$. By increasing the attitude error, the norm of $L$ will get larger. 
+%where $0_{ab} \in \mathbb{R}^{a\times b}$ and $I_a\in\mathbb{R}^{a\times a}$ are zero and identity matrices, respectively.
+%Since the gain matrices $K_p$ and $K_v$ are designed to make the system matrix $A$ Hurwitz, we can find the positive definite matrix $P$ satisfying $PA + A^\top P < 0$. Accordingly, it is possible to define $Q = -\frac{1}{2}(PA +A^\top P) \geq 0$. 
+%Furthermore, it is assumed that the axis $z_b$ tracks $z_b^d$ with sufficient accuracy so that the following condition is satisfied.
+%\begin{equation}
+%\text{s}_\Phi < {\frac{\nu}{\eta_p\eta_k}} \label{eq:angleCondition}
+%\end{equation}
+%where 
+%$\nu = \lambda_{\min}(Q)$, $\eta_p = \lambda_{\max}(P)$, and $\eta_k = \lambda_{\max}(\text{blockdiag}\{K_p,K_v\})$.
+%Here, $\lambda(\cdot)$ means the eigenvalue of the corresponding matrix.
+%Then, with the Lyapunov candidate function $V = \frac{1}{2}e^\top P e$, the stability analysis on eq. \eqref{eq:translationalError} can be carried out as follows: 
+%\begin{align}
+%\dot{V} &= \textstyle{\frac{1}{2}}e^\top (PA + A^\top P)e + e^\top P B (\Delta + \text{s}_\Phi|\ddot{x}^d|\bar{u}) \nonumber \\
+%&= -e^\top Q e \label{eq:lyapForFunnel} \\
+%&\;\;\;\; + e^\top P B (\Delta + \text{s}_\Phi |-K_p e_p - K_v e_v +ge_3+{\ddot{x}}^r|\bar{u}) \nonumber  \\
+%&\leq -\nu |e|^2 + \eta_p|e|\{\bar{\Delta}+\bar{\text{s}}_\Phi(\eta_k|e|+\bar{T})\} \nonumber \\
+%&\leq (-\nu + \bar{\text{s}}_\Phi\eta_p\eta_k)|e|^2 + \eta_p\{\bar{\Delta} + \bar{\text{s}}_\Phi\bar{T}\}|e|. \label{eq:lyapForISS} 
+%\end{align}
+%With the condition in eq. \eqref{eq:angleCondition}, it is clear that $-\nu+\text{s}_\Phi\eta_p\eta_k < 0$. 
+%To find the region of $e$ satisfying $\dot{V} < 0$, we rearrange eq. \eqref{eq:lyapForISS} as follows:
+%\begin{align}
+%\dot{V} &\leq (-\nu+\bar{\text{s}}_\Phi\eta_p\eta_k)\theta|e|^2 + (-\nu+\bar{\text{s}}_\Phi\eta_p\eta_k)(1-\theta)|e|^2 \nonumber \\
+%&\;\;\;\;\;+\eta_p\{\bar{\Delta} + \bar{\text{s}}_\Phi \bar{T}\}|e| \nonumber 
+%\end{align}
+%where $0<\theta<1$. 
+%Then, 
+%\begin{equation}
+%\dot{V} \leq (-\nu+\bar{\text{s}}_\Phi\eta_p\eta_k)\theta|e|^2,\;\;\; \forall |e| \geq L \left[\begin{array}{ll}\bar{\Delta} & \bar{T}\end{array}\right]^\top \label{eq:forConstraint} 
+%\end{equation}
+%where
+%\begin{equation}
+%L = \frac{\eta_p}{(\nu-\bar{\text{s}}_\Phi\eta_p\eta_k)(1-\theta)}[\begin{array}{cc}1 & \bar{\text{s}}_\Phi \end{array}]. \nonumber
+%\end{equation}
+%Therefore, eq. \eqref{eq:translationalError} could be considered as an input-to-state stable system with the norm of disturbance $\bar{\Delta}$ and nominal mass normalized collective thrust $\bar{T}$ as input terms.
+Also, the norm of $L$ is a monotonic function of $\alpha$ and $\bar{\text{s}}_\Phi$. 
+By increasing the attitude error, the norm of $L$ will get larger. 
+In the same manner, the bigger drag coefficient $\alpha$ will grow the norm of $L$.
 Accordingly, the error $|e|$ will be bounded with larger radius. 
-%It implies that the attitude control should be achieved as accurate as possible. 
-Finally, the norm of the error $|e|$ will enter the ball with radius $\gamma$ which is $\gamma = \frac{\lambda_{\max}(P)}{\lambda_{\min}(P)}|L|\;|[\bar{\Delta}\;\;\bar{T}]|$ [KHALIL].
+It implies that the trajectory tracking performance will get better by having small drag coefficient and good attitude tracking performance.
+%Finally, the norm of the error $|e|$ will enter the ball with radius $\gamma$ which is $\gamma = \frac{\lambda_{\max}(P)}{\lambda_{\min}(P)}|L|\;|[\bar{\Delta}\;\;\bar{T}]|$ [KHALIL].
 %\begin{equation}
 %\gamma = \frac{\lambda_{\max}(P)}{\lambda_{\min}(P)}|L|\;|[\bar{\Delta}\;\;\bar{T}]|. \nonumber
 %\end{equation}
@@ -236,7 +340,7 @@ e(t_0) \in \xi_0,\;\xi_0 \subset \mathcal{F}(0)\;\Rightarrow\; e(t) \in \mathcal
 \end{equation}
 %Since the error $e(t_0)$ contained in the set $\xi_0$ will evolve inside of the set $\mathcal{F}(t)$ for alll time, the set $\mathcal{F}(t)$ can be considered as a funnel.
 
-Define a time varying positive definite matrix $P_\mathcal{F}(t) \in \mathbb{R}^{6\times 6}$, a positive parameter $\alpha(t) \in \mathbb{R}$, and $V_\mathcal{F}(t,e) = \frac{1}{2}e(t)^\intercal P_\mathcal{F}(t) e(t)$.
+Define a time varying positive definite matrix $P_\mathcal{F}(t) \in \mathbb{R}^{6\times 6}$, a positive parameter $\alpha(t) \in \mathbb{R}$, and $V_\mathcal{F}(t,e) = \frac{1}{2}e(t)^\top P_\mathcal{F}(t) e(t)$.
 In the following analysis, $V_\mathcal{F}(t,e)$ will be a Lyapunov function, and $\alpha(t)$ will be the parameter indicating the level of $V_\mathcal{F}(t,e)$.
 Then, define a set $\mathcal{F}(t)$ as 
 \begin{equation}
@@ -261,8 +365,8 @@ At $t = t_0$, the initial set of $e$, i.e. $\xi_0$, should be the subset of $\ma
 %so that we can see how all the error state in $e(t_0) \in \xi_0$ progress as time goes on. 
 To satisfy the constraint, we define $\xi_0$ with a positive definite matrix $R$ as follows:
 \begin{equation}
-%\xi_0 = \{e(t_0) \in \mathbb{R}^{6\times1}|e(t_0)^\intercal R e(t_0) \leq 1\}.
-\xi_0 = \{e \in \mathbb{R}^{6\times1}|e^\intercal R e \leq 1\}.
+%\xi_0 = \{e(t_0) \in \mathbb{R}^{6\times1}|e(t_0)^\top R e(t_0) \leq 1\}.
+\xi_0 = \{e \in \mathbb{R}^{6\times1}|e^\top R e \leq 1\}.
 \end{equation} 
 
 Furthermore, we want to find $V_\mathcal{F}$ and $\alpha$ that represent the tight outer bound of $e$. 
@@ -271,7 +375,7 @@ it is possible to define a ellipsoid that enclosing the level set defined as $V_
 Then, by minimizing the size of the outer shell, the size of the funnel could be minimized consequently.
 The outer ellipsoid can be formulated such as
 \begin{align}
-&\hat{e}^\intercal(t) S(t) \hat{e}(t) \leq 1,  \nonumber \\
+&\hat{e}^\top(t) S(t) \hat{e}(t) \leq 1,  \nonumber \\
 &\text{ for }\;\;\;\hat{e}(t) = \{e(t)|V_\mathcal{F}(t,e) = \alpha(t),\;t \in [t_0,t_f]\}. \nonumber
 \end{align}
 where $S(t)\in \mathbb{R}^{6\times 6}$ is the positive definite matrix representing the shape of the outer shell. Note that the volume of the ellipsoid is proportional to the determinant of $S(t)$.
@@ -281,9 +385,9 @@ Based on these observations, we can formulate the optimization problem to find t
 \begin{array}{rl}
 \displaystyle{\inf_{P_\mathcal{F},\alpha,S}} & \int_{t_0}^{t_f} \det{S(t)}\text{d}t \label{eq:optim1} \\
 \displaystyle{\text{s.t.}}& \dot{V}_\mathcal{F}(t,\hat{e}) < \dot{\alpha}(t)\text{ for }\hat{e} = \{e(t)|V_\mathcal{F}(t,e) = \alpha(t)\}, \nonumber \\
-& \hat{e}^\intercal S(t) \hat{e} \leq 1\text{ for }\hat{e} = \{e(t)|V_\mathcal{F}(t,e) = \alpha(t)\}, \nonumber \\
+& \hat{e}^\top S(t) \hat{e} \leq 1\text{ for }\hat{e} = \{e(t)|V_\mathcal{F}(t,e) = \alpha(t)\}, \nonumber \\
 %& \xi_0 \subset \mathcal{F}(0,e).
-& V_\mathcal{F}(t_0,\hat{e}) \leq \alpha(t_0)\text{ for }\hat{e} = \{e|e^\intercal R e \leq 1\}. \nonumber
+& V_\mathcal{F}(t_0,\hat{e}) \leq \alpha(t_0)\text{ for }\hat{e} = \{e|e^\top R e \leq 1\}. \nonumber
 \end{array}
 \end{equation}
 
@@ -298,15 +402,15 @@ P_{pv}(t) & P_v(t)
 \right] \nonumber
 \end{equation}
 where $P_p(t)$, $P_{pv}(t)$, and $P_v(t)$ are diagonal matrices with positive entries.
-With $P_\mathcal{F}(t)$ and eq. \eqref{eq:lyapForFunnel}, the Lyapunov function $V_\mathcal{F} = \frac{1}{2}e^\intercal P_\mathcal{F}(t) e$ is rearranged as follows: 
+With $P_\mathcal{F}(t)$ and eq. \eqref{eq:lyapForFunnel}, the Lyapunov function $V_\mathcal{F} = \frac{1}{2}e^\top P_\mathcal{F}(t) e$ is rearranged as follows: 
 \begin{align}
-\dot{V}_\mathcal{F} &= -e^\intercal Q_\mathcal{F} e + e^\intercal \dot{P}_\mathcal{F} e\nonumber \\
-&\;\;\;+e^\intercal P_\mathcal{F} B(\Delta+\text{s}_\Phi|-K_pe_p -K_ve_v + ge_3 + \ddot{x}^r|\bar{u}) \nonumber
+\dot{V}_\mathcal{F} &= -e^\top Q_\mathcal{F} e + e^\top \dot{P}_\mathcal{F} e\nonumber \\
+&\;\;\;+e^\top P_\mathcal{F} B(\Delta+\text{s}_\Phi|-K_pe_p -K_ve_v + ge_3 + \ddot{x}^r|\bar{u}) \nonumber
 \end{align}
 In the right hand side of the above equation, the third term further developed as
 \begin{align}
-&e^\intercal P_\mathcal{F} B(\Delta+\text{s}_\Phi|-K_p e_p -K_v e_v + ge_3 + \ddot{x}^r|\bar{u}) \nonumber \\
-&\leq |e^\intercal P_\mathcal{F}B|\{\bar{\Delta} + \bar{\text{s}}_\Phi(k_p|e_p| + k_v|e_v| + \bar{T}\} \nonumber \\
+&e^\top P_\mathcal{F} B(\Delta+\text{s}_\Phi|-K_p e_p -K_v e_v + ge_3 + \ddot{x}^r|\bar{u}) \nonumber \\
+&\leq |e^\top P_\mathcal{F}B|\{\bar{\Delta} + \bar{\text{s}}_\Phi(k_p|e_p| + k_v|e_v| + \bar{T}\} \nonumber \\
 &\leq (p_{pv}|e_p|+p_v|e_v|)\{\bar{\Delta}+\bar{\text{s}}_\Phi(k_p|e_p|+k_v|e_v|+\bar{T})\} \label{eq:normAnalysis}
 \end{align}
 where $p_{pv}$, $p_v$, $k_p$, and $k_v$ are maximum eigenvalues of $P_{pv}$, $P_v$, $K_p$, and $K_v$.
@@ -314,16 +418,16 @@ Not to make the analysis too conservative,
 we define two variables $\bar{e}_p\in\mathbb{R}$ and $\bar{e}_v\in\mathbb{R}$ to substitute the terms $|e_p|$ and $|e_v|$ in eq. \eqref{eq:normAnalysis} with the following constraints:
 \begin{equation}
 \begin{array}{ll}
-\bar{e}_p^2 = e_p^\intercal e_p = |e_p|^2, & \bar{e}_p \geq 0 \\
-\bar{e}_v^2 = e_v^\intercal e_v = |e_v|^2, & \bar{e}_v \geq 0. \\
+\bar{e}_p^2 = e_p^\top e_p = |e_p|^2, & \bar{e}_p \geq 0 \\
+\bar{e}_v^2 = e_v^\top e_v = |e_v|^2, & \bar{e}_v \geq 0. \\
 \end{array} \label{eq:ebarConst} 
 \end{equation} 
 Then, $\dot{V}_\mathcal{F}$ is further developed as follows:
 \begin{align}
-\dot{V}_\mathcal{F} &= -e^\intercal Q_\mathcal{F} e + e^\intercal \dot{P}_\mathcal{F}e \label{eq:vdot} \\
+\dot{V}_\mathcal{F} &= -e^\top Q_\mathcal{F} e + e^\top \dot{P}_\mathcal{F}e \label{eq:vdot} \\
  &\;\;\;\;+(p_{pv}\bar{e}_p+p_v\bar{e}_v)\{\bar{\Delta} + \bar{\text{s}}_\Phi(k_p\bar{e}_p+k_v\bar{e}_v + \bar{T})\} \nonumber 
 %\\ 
-%&= -e^\intercal Q_\mathcal{F} e + e^\intercal \dot{P}_\mathcal{F}e \label{eq:vdot1} \\
+%&= -e^\top Q_\mathcal{F} e + e^\top \dot{P}_\mathcal{F}e \label{eq:vdot1} \\
 % &\;\;\;\;+(p_{pv}\bar{e}_p+p_v\bar{e}_v)\{\bar{\text{s}}_\Phi(k_p\bar{e}_p+k_v\bar{e}_v) + \bar{\Delta} + \bar{\text{s}}_\Phi\bar{T}\} \nonumber 
 \end{align}
 with the constraints in eq. \eqref{eq:ebarConst}.
@@ -340,7 +444,7 @@ Then, the optimization problem can be reformulated as the following:
 &
 \begin{array}{rl}
 \displaystyle{\text{s.t.}}& \dot{\alpha}(n) - \dot{V}_\mathcal{F}(n) \geq 0\text{ with constraints $c_1$ to $c_9$},  \\
-& 1-e^\intercal S(n) e \geq 0\text{ with constraints $c_9$ and $c_{10}$}, \nonumber \\
+& 1-e^\top S(n) e \geq 0\text{ with constraints $c_9$ and $c_{10}$}, \nonumber \\
 & \alpha(0) - V_\mathcal{F}(0) \geq 0\text{ with constraint $c_{11}$}. \nonumber
 \end{array} \nonumber 
 \end{align}
@@ -352,7 +456,7 @@ c_3:& \bar{e}_v^2 = e_v^Te_v,           & c_4:&\bar{e}_v \geq 0 \\
 c_5:& p_{pv}(n)I_3 \geq P_{pv}(n),      & c_6:&p_{pv}(n)I_3 \geq -P_{pv}(n) \\
 c_7:& p_{ v}(n)I_3 \geq P_{ v}(n),      & c_8:&p_{ v}(n)I_3 \geq -P_{ v}(n) \\
 c_9:& \alpha(n) - V_\mathcal{F}(n) = 0, & c_{10}:&S(n) > 0 \\
-c_{11}:& 1-e^\intercal R e = 0. &&
+c_{11}:& 1-e^\top R e = 0. &&
 \end{array} \nonumber
 \end{equation}
 The constraints $c_5$ to $c_8$ is added to ensure
@@ -385,12 +489,12 @@ P_x = P_p - P_{pv}^2 P_v^{-1}. \nonumber
 \begin{figure*}[h]
 \begin{subfigure}[b]{0.5\textwidth}
 \centering
-\includegraphics[width=6.0cm]{smaller.pdf}
+\includegraphics[width=7.0cm]{smaller.pdf}
 \caption{aa}
 \end{subfigure}
 \begin{subfigure}[b]{0.5\textwidth}
 \centering
-\includegraphics[width=6.0cm]{bigger.pdf}
+\includegraphics[width=7.0cm]{bigger.pdf}
 \caption{aa}
 \end{subfigure}
 
