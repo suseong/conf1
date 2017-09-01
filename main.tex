@@ -14,8 +14,6 @@
 % See the \addtolength command later in the file to balance the column lengths
 % on the last page of the document
 
-
-
 % The following packages can be found on http:\\www.ctan.org
 %\usepackage{graphics} % for pdf, bitmapped graphics files
 %\usepackage{epsfig} % for postscript graphics files
@@ -31,11 +29,14 @@
 \usepackage{amssymb}  % assumes amsmath package installed
 \usepackage{amsfonts}
 \usepackage{amsmath} % assumes amsmath package installed
-%\usepackage{subfigure}
-%\usepackage{caption}
 \usepackage{subcaption}
 \usepackage{cite}
 \usepackage{color}
+\usepackage{multirow}
+\usepackage{algpseudocode,algorithm,algorithmicx}
+%\usepackage[]{algorithm2e}
+
+%\SetKwInput{KwFind}{Find}
 
 
 \title{\LARGE \bf
@@ -73,16 +74,13 @@ Robust Trajectory Planning for a Multirotor Using Funnel Library
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{abstract}
 
-This paper is about robust trajectory generation for quadrotor type UAVs using funnel libraries.
+This paper is about funnel library that can be used to generate robust trajectories for multirotors.
 
 \end{abstract}
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{INTRODUCTION}
-
-my mind is blank.
-Transient. Disturbance. Model uncertainties. and so on.
 
 Throughout the paper, $0_{ij}$ stands for the zero matrix in $\mathbb{R}^{i\times j}$, and $I_i$ denotes the identity matrix in $\mathbb{R}^{i\times i}$. 
 For a matrix, $\|\cdot\|$ represents the induced 2 norm, and $\lambda_{\max}(\cdot)$ and $\lambda_{\min}(\cdot)$ indicate the maximum and minimum eigenvalues.
@@ -179,24 +177,25 @@ Furthermore, the maximum thrust axis error is bounded such as $\text{s}_\Phi \le
 
 \subsection{Stability analysis}
 In Sec. \ref{sec:controller}, it is assumed that the attitude error is bounded for all flight duration.
-On the other hand, the translational position and velocity errors could be considered as input-to-state stable by considering $\bar{T}$, $|\dot{p}^r|$, and $\delta$ as input terms. 
-To prove that, the error dynamics in eq. \eqref{eq:translationalError1} is summarized as follows: 
+In this subsection, we investigate the stability of the translational dynamics in eq. \eqref{eq:translationalError1}.  
+%could be considered as input-to-state stable by considering $\bar{T}$, $|\dot{p}^r|$, and $\delta$ as input terms. 
+As the first step, the dynamics system is summarized as follows: 
 \begin{equation}
 \begin{array}{l}
 \dot{e}_p = e_v \\
-\dot{e}_v = -K_pe_p-K_ve_v+F_d+\delta+\text{s}_\Phi|\ddot{p}^d| u 
+\dot{e}_v = -K_pe_p-K_ve_v+F_d+\delta+\text{s}_\Phi|\ddot{p}^d| u. 
 \end{array} \label{eq:errorDynamics}
 \end{equation}
-To analyze the stability of the error dynamics conveniently, we assume that $K_p = k_pI_3$ and $K_v = k_vI_3$ with positive scalar gain values $k_p$ and $k_v$. Then, we define the Lyapunov candidate function such as
+To analyze the stability of the error dynamics conveniently, we assume that $K_p = k_pI_3$ and $K_v = k_vI_3$ with positive scalar gain values $k_p$ and $k_v$. 
+Then, we define the Lyapunov candidate function as $V=\frac{1}{2}e^\top P e$ where $e = [e_p^\top\;e_v^\top]^\top$ and
 \begin{equation}
-V = \frac{1}{2} e^\top 
-\left[
+P = \left[
 \begin{array}{rr}
 (k_p+k_d)I_3 & I_3 \\ I_3 & I_3
 \end{array}
-\right]e \nonumber
+\right]. \nonumber
 \end{equation}
-where $e = [e_p^\top\;e_v^\top]^\top$. The Lyapunov function is positive definite when $k_p + k_v > 1$.
+The Lyapunov function is positive definite when $k_p + k_v > 1$.
 Furthermore, the directional derivative of $V$ can be summarized as follows:
 \begin{align}
 \dot{V} &= -k_p e_p^\top e_p -k_v e_v^\top e_v + e_v^\top e_v \nonumber \\
@@ -206,9 +205,9 @@ Then, by having $\ddot{p}^d$ in eq. \eqref{eq:ddpd}, $|\delta|\leq\bar{\delta}$,
 \begin{align}
 \dot{V} &\leq -k_p|e_p|^2 -(k_v+1)|e_v|^2 +(|e_p| + |e_v|)\nonumber \\
 &\;\;\;\;\times\{\bar{\delta} + c_d|\dot{p}^r+e_v|+\bar{\text{s}}_\Phi(|-k_pe_p-k_ve_v|+\bar{T})\} \nonumber \\
-&\leq -\bar{e}^\top Q\bar{e} + (\bar{\delta}+c_d|\dot{p}^r|+\bar{s}_\Phi\bar{T})|\bar{e}| \label{eq:dotV}
+&\leq -\bar{e}^\top Q\bar{e} + \Delta|\bar{e}| \label{eq:dotV}
 \end{align} 
-where $\bar{e} = [|e_p|\;|e_v|]^\top$ and
+where $\bar{e} = [|e_p|\;|e_v|]^\top$, $\Delta = \bar{\delta}+c_d|\dot{p}^r|+\bar{s}_\Phi\bar{T}$ and
 \begin{align}
 Q &= \left[
 \begin{array}{rr}
@@ -217,7 +216,7 @@ k_p(1-\bar{s}_\Phi) & -\frac{1}{2}\{c_d+\bar{s}_\Phi(k_p+k_d)\} \\
 \end{array}
 \right].\nonumber 
 \end{align}
-Here, the matrix $Q$ can be considered as two separated parts such as
+Here, the matrix $Q$ can be considered as the summation of the two separated parts such as
 \begin{equation}
 Q = Q_A + \bar{\text{s}}_\Phi Q_B \nonumber
 \end{equation}
@@ -238,53 +237,74 @@ By setting $k_v > 1+c_d$ and $k_p > \frac{c_d^2}{4(k_v-1-c_d)}$, we can make the
 On the other hand, the matrix $Q_B$ cannot be positive definite since the determinant of $Q_B$ is $\text{det}(Q_B) = -\frac{1}{4}(k_p-k_v)^2 \leq 0$, i.e. $\lambda_{\max}(Q_B)\geq0$ and $\lambda_{\min}(Q_B)\leq 0$.
 However, even though $Q_B$ is not positive definite, we can assure that the matrix $Q$ is positive definite with the condition $\bar{\text{s}}_\Phi < -\lambda_{\min}(Q_A)/\lambda_{\min}(Q_B)$
 which could readly be achieved since $\bar{\text{s}}_\Phi \approx 0$ with a well designed attitude controller.
-Therefore, with the gain values $k_p$ and $k_v$ fulfilling $\lambda(Q) \geq 0$, eq. \eqref{eq:dotV} is rearranged further as
+Therefore, with the gain values $k_p$ and $k_v$ fulfilling $\lambda(Q) \geq 0$, eq. \eqref{eq:dotV} becomes
 \begin{align}
-\dot{V} &\leq -\lambda_{\min}(Q)|\bar{e}|^2 + (\bar{\delta}+c_d|\dot{p}^r|+\bar{s}_\Phi\bar{T})\bar{e} \nonumber \\
-&\leq -\lambda_{\min}(Q)\theta|\bar{e}|^2-\lambda_{\min}(Q)(1-\theta)|\bar{e}|^2 \nonumber \\
-&\;\;\;\;+ (\bar{\delta}+c_d|\dot{p}^r|+\bar{s}_\Phi\bar{T})|\bar{e}| \nonumber
+\dot{V} &\leq -\lambda_{\min}(Q)|\bar{e}|^2 + \Delta|\bar{e}| \nonumber \\
+&\leq -\lambda_{\min}(Q)(1-\theta)|\bar{e}|^2-\lambda_{\min}(Q)\theta|\bar{e}|^2 + \Delta|\bar{e}| \nonumber
+%&\leq -\lambda_{\min}(Q)(1-\theta)|\bar{e}|^2-\lambda_{\min}(Q)\theta|\bar{e}|^2 \nonumber \\
+%&\;\;\;\;+ (\bar{\delta}+c_d|\dot{p}^r|+\bar{s}_\Phi\bar{T})|\bar{e}| \nonumber
 \end{align}
-where $0<\theta<1$. Finally, 
-\begin{equation}
-\dot{V} \leq -\lambda_{\min}(Q)\theta|\bar{e}|^2,\;\;\forall|\bar{e}| \geq L\left[
-\begin{array}{ccc}
-\bar{\delta}&|\dot{p}^r|&\bar{T}
-\end{array}
-\right]^\top
-%\frac{|L|}{\lambda_{\min(Q)}(1-\theta)}. \nonumber
-\end{equation}
-where
-\begin{equation}
-L = \frac{1}{\lambda_{\min}(Q)(1-\theta)}\left[
-\begin{array}{ccc}
-1&c_d&\bar{\text{s}}_\Phi 
-\end{array}
-\right].
-\end{equation}
-Therefore, the error dynamics of the translational system of a multirotor is input-to-state stable with inputs of $\bar{\delta}$, $|\dot{p}^r|$, and $\bar{T}$. In other words, the norm of error is 
-\begin{equation}
-|e| < KL(|e_0|,t-t_0) + K(|[\bar{\delta},|\dot{p}^r|,\bar{T}]|) \nonumber
-\end{equation}
-Keeps converging to the region bound set by the norm of input terms.
-Also, the norm of $L$ is a monotonic function of $c_d$ and $\bar{\text{s}}_\Phi$. 
-%By increasing the attitude error, the norm of $L$ will get larger. 
-%In the same manner, the bigger drag coefficient $c_d$ will grow the norm of $L$.
-Accordingly, the error $|e|$ will be bounded by larger bound with larger values of $\bar{\text{s}}_\Phi$ and $c_d$. 
-%It implies that the trajectory tracking performance will get better by having small drag coefficient and good attitude tracking performance.
-%Finally, the norm of the error $|e|$ will enter the ball with radius $\gamma$ which is $\gamma = \frac{\lambda_{\max}(P)}{\lambda_{\min}(P)}|L|\;|[\bar{\delta}\;\;\bar{T}]|$ [KHALIL].
+where $0<\theta<1$. 
+%Finally, 
 %\begin{equation}
-%\gamma = \frac{\lambda_{\max}(P)}{\lambda_{\min}(P)}|L|\;|[\bar{\delta}\;\;\bar{T}]|. \nonumber
+%\dot{V} \leq -\lambda_{\min}(Q)(1-\theta)|\bar{e}|^2,\;\;
+%\forall|\bar{e}| \geq 
+%\frac{\bar{\delta}+c_d|\dot{p}^r|+\bar{s}_\Phi\bar{T}}{\lambda_{\min}(Q)\theta}. \nonumber
 %\end{equation}
+%\begin{equation}
+%\dot{V} \leq -\lambda_{\min}(Q)(1-\theta)|\bar{e}|^2,\;\;\forall|\bar{e}| \geq L\left[
+%\begin{array}{ccc}
+%\bar{\delta}&|\dot{p}^r|&\bar{T}
+%\end{array}
+%\right]^\top
+%%\frac{|L|}{\lambda_{\min(Q)}(1-\theta)}. \nonumber
+%\end{equation}
+%where
+%\begin{equation}
+%L = \frac{1}{\lambda_{\min}(Q)(1-\theta)}\left[
+%\begin{array}{ccc}
+%1&c_d&\bar{\text{s}}_\Phi 
+%\end{array}
+%\right].
+%\end{equation}
+Therefore, the error dynamics of the translational system of a multirotor is uniformly ultimately bounded. Furthermore, the ultimate bound $b$ could be computed as 
+\begin{equation}
+b = \sqrt{\frac{\lambda_{\max}(P)}{\lambda_{\min}(P)}\mu^2},\;\;\;
+%\mu = \frac{\bar{\delta}+c_d|\dot{p}^r|+\bar{s}_\Phi\bar{T}}{\lambda_{\min}(Q)\theta}. 
+\mu = \frac{\Delta}{\lambda_{\min}(Q)\theta}. 
+\label{eq:expected}
+\end{equation}
+% of $\bar{\delta}$, $|\dot{p}^r|$, and $\bar{T}$. In other words, the norm of error is 
+%\begin{equation}
+%|e| < KL(|e_0|,t-t_0) + K(|[\bar{\delta},|\dot{p}^r|,\bar{T}]|) \nonumber
+%\end{equation}
+In this analysis, we could know that any error will eventually enter into the ultimate bound $|e| \leq b$ within finite time. 
+The ultimate bound is the function of $\Delta$ and it is the combination of $\bar{\delta}$, $|\dot{p}^r|$, and $\bar{\text{s}}_\Phi\bar{T}$. Also, the drag coefficient and the maximum attitude error could be interpreted as the weight terms. 
+Hence, the radius of the bound will get bigger by having larger disturbances, reference velocity, and reference acceleration ($\bar{T} = |ge_3 + \ddot{p}^r|$). 
+However, even though we could get the general sense on how the error will behave, 
+it is difficult to know the tight ultimate bound that the error states actually resides. 
+Also, given initial set of error states, it is hard to see how the error evolve before getting into the ultimate bound.
+
+%Keeps converging to the region bound set by the norm of input terms.
+%Also, the norm of $L$ is a monotonic function of $c_d$ and $\bar{\text{s}}_\Phi$. 
+%%By increasing the attitude error, the norm of $L$ will get larger. 
+%%In the same manner, the bigger drag coefficient $c_d$ will grow the norm of $L$.
+%Accordingly, the error $|e|$ will be bounded by larger bound with larger values of $\bar{\text{s}}_\Phi$ and $c_d$. 
+%%It implies that the trajectory tracking performance will get better by having small drag coefficient and good attitude tracking performance.
+%%Finally, the norm of the error $|e|$ will enter the ball with radius $\gamma$ which is $\gamma = \frac{\lambda_{\max}(P)}{\lambda_{\min}(P)}|L|\;|[\bar{\delta}\;\;\bar{T}]|$ [KHALIL].
+%%\begin{equation}
+%%\gamma = \frac{\lambda_{\max}(P)}{\lambda_{\min}(P)}|L|\;|[\bar{\delta}\;\;\bar{T}]|. \nonumber
+%%\end{equation}
 
 \section{Computing funnels}
-Heretofore, the stability of the translational motion of a multirotor has been analyzed. 
-The error $|e|$ will be bounded and the radius of the bound is determined by the norm of disturbance, the norm of the nominal thrust, and the accuracy on attitude control. 
-Even though we know how the error would behave and the radius of bound in conservative manner, we cannot find the tight bound of the error state with the above analysis. 
-
+%Heretofore, the stability of the translational motion of a multirotor has been analyzed. 
+%The error $|e|$ will be bounded and the radius of the bound is determined by the norm of disturbance, the norm of the nominal thrust, and the reference velocity. 
+%Even though we know how the error would behave and the radius of bound in conservative manner, we cannot find the tight bound of the error state with the above analysis. 
+In Sec. \ref{sec:stability}, we checked the general behaviour of the translational error dynamic system in conservative manner.
 However, with the funnel analysis with sum of squares optimization tools, we can find the realistic outermost bound on the state $e$.
 The concept of funnel and numerical method for computing funnel are mainly adopted from [MAJ]. 
 \subsection{Funnel?}
-Funnel $\mathcal{F}(t) \subset \mathbb{R}^{6\times 1}$  represents the outermost bound of the set of error $e(t)\in \mathbb{R}^{6\times 1}$ given the initial set of error $e(t_0) \in \xi_0$ and the dynamic equation.
+Funnel $\mathcal{F}(t) \subset \mathbb{R}^{6\times 1}$  represents the reachable set of error $e(t)\in \mathbb{R}^{6\times 1}$ given the initial set of error $e(t_0) \in \xi_0$ and a closed-loop dynamic equation.
 In other words, the error $e(t_0)$ contained in the set $\xi_0$ will evolve only inside of the set $\mathcal{F}(t)$ for all time.
 These property of the funnel could be written as follows:
 \begin{equation}
@@ -315,10 +335,9 @@ Therefore, the set $\mathcal{F}(t)$ defined in eqs. \eqref{eq:funnel2} and \eqre
 Another constraint to fulfill the property of funnel defined in eq. \eqref{eq:funnel1} is related on the initial condition of a funnel. 
 At $t = t_0$, the initial set of $e$, i.e. $\xi_0$, should be the subset of $\mathcal{F}(t_0)$. 
 %so that we can see how all the error state in $e(t_0) \in \xi_0$ progress as time goes on. 
-To satisfy the constraint, we define $\xi_0$ with a positive definite matrix $R$ as follows:
+To satisfy the constraint, we define $\xi_0 = \{e \in \mathbb{R}^{6\times1}|e^\top R e \leq 1\}$ with a positive definite matrix $R$. Then, the constraint can be written as follows:
 \begin{equation}
-%\xi_0 = \{e(t_0) \in \mathbb{R}^{6\times1}|e(t_0)^\top R e(t_0) \leq 1\}.
-\xi_0 = \{e \in \mathbb{R}^{6\times1}|e^\top R e \leq 1\}.
+V_\mathcal{F}(t_0,\hat{e}) \leq \alpha(t_0),\;\;\text{for}\;\;\hat{e} = \{e |e^\top R e \leq 1\}.
 \end{equation} 
 
 Furthermore, we want to find $V_\mathcal{F}$ and $\alpha$ that represent the tight outer bound of $e$. 
@@ -344,7 +363,7 @@ Based on these observations, we can formulate the optimization problem to find t
 \end{equation}
 
 \subsection{Computing funnel}
-We compute the funnels for the multirotor translational error dynamic system in eq. \eqref{eq:errorDynamics}.
+We compute the funnels for the multirotor translational error dynamic system.
 First of all, 
 we define the Lyapunov function in the quadratic form such as $V_\mathcal{F} = e(t)^\top P_\mathcal{F} e(t)$ with the time varying positive definite matrix
 \begin{equation}
@@ -356,10 +375,10 @@ P_{pv}(t) & P_v(t)
 \right] \nonumber
 \end{equation}
 where $P_p(t)$, $P_{pv}(t)$, and $P_v(t)$ are diagonal matrices with positive entries.
-Then, the Lyapunov function $V_\mathcal{F} = e^\top P_\mathcal{F}(t) e$ is rearranged as follows: 
+Then, with eq. \eqref{eq:errorDynamics}, the directional derivative of the Lyapunov function $V_\mathcal{F}$ is rearranged as follows: 
 \begin{align}
-\dot{V}_\mathcal{F} &= -e^\top ( A^\top P_\mathcal{F} + P_\mathcal{F}A) e + e^\top \dot{P}_\mathcal{F} e \nonumber \\
-&\;\;\;\;+2e^\top P_\mathcal{F} B (\delta+\text{s}_\Phi|\ddot{p}^d|{u}+F_d) \nonumber
+\dot{V}_\mathcal{F} &= -e^\top ( A^\top P_\mathcal{F} + P_\mathcal{F}A) e + e^\top \dot{P}_\mathcal{F}e \nonumber \\
+&\;\;\;\;+2e^\top P_\mathcal{F} B(\delta+\text{s}_\Phi|\ddot{p}^d|{u}+F_d) \nonumber
 \end{align}
 where
 \begin{equation}
@@ -382,9 +401,9 @@ In the right hand side of the above equation, the third term further developed a
 &\leq (p_{pv}|e_p|+p_v|e_v|)\{\bar{\text{s}}_\Phi(k_p|e_p|+k_v|e_v|)+c_d|e_v|+\Delta\} \label{eq:normAnalysis}
 \end{align}
 where $p_{pv}$, $p_v$, $k_p$, and $k_v$ are maximum eigenvalues of $P_{pv}$, $P_v$, $K_p$, and $K_v$.
-Also, $\Delta = \bar{\delta}+\bar{\text{s}}_\Phi + \bar{T}$.
-Not to make the analysis too conservative, 
-we define two variables $\bar{e}_p\in\mathbb{R}$ and $\bar{e}_v\in\mathbb{R}$ to substitute the terms $|e_p|$ and $|e_v|$ in eq. \eqref{eq:normAnalysis} with the following constraints:
+Also, $\Delta = \bar{\delta}+c_d|\dot{p}^r| + \bar{\text{s}}_\Phi\bar{T}$.
+To handle the error states with the norm $|e_p|$ and $|e_v|$ in eq. \eqref{eq:normAnalysis}, we define two variables $\bar{e}_p\in\mathbb{R}$ and $\bar{e}_v\in\mathbb{R}$ with the following constraints:
+%to substitute the terms $|e_p|$ and $|e_v|$ in eq. \eqref{eq:normAnalysis} with the following constraints:
 \begin{equation}
 \begin{array}{ll}
 \bar{e}_p^2 = e_p^\top e_p = |e_p|^2, & \bar{e}_p \geq 0 \\
@@ -441,100 +460,213 @@ In addition, $\dot{P}_\mathcal{F}(n)$ and $\dot{\alpha}(n)$ could be implemented
 \end{array} \nonumber
 \end{equation}
 The optimization problem in eq. \eqref{eq:optim2} could be transformed into the form of sum-of-squares problem and solved efficiently by referring [MAJ].
-
-\subsection{Funnel library}
-As shown in eq. \eqref{eq:translationalError}, the dynamics of the translational error $e$ is governed by the gain matrices $K_p$ and $K_v$, attitude control error $\text{s}_\Phi$, the magnitude of the nominal acceration $|\ddot{x}^r|$, and the external force $\delta$.  
-Unlike the gain matrices which are set directly by user, the external force is a varying parameter in accordance with environment condition.
-Also, the reference trajectory $x^r$ would affect the dinamics since $\ddot{x}^r$ is the term inside of $\bar{T}$. Furthermore, the reference velocity, which is the nominal velocity of the multirotor, will influence the rotor drag effect.
-Therefore, to be able to see how the error would progress in various environmental situations and reference trajectory settings, 
-we generate funnels with different settings on the initial set of error $\xi_0$, the attitude control accuracy $\bar{\text{s}}_\Phi$, 
-the magnitude of the lumped disturbances $\bar{\delta}$, and nominal magnitude of thrust $\bar{T}$.
-
-
-
-The projected ellipsoid is
-\begin{equation}
-P_x = P_p - P_{pv}^2 P_v^{-1}. \nonumber
-\end{equation}
-
-\begin{figure*}[h]
+\begin{figure*}[t]
 \begin{subfigure}[b]{0.5\textwidth}
 \centering
 \includegraphics[width=7.0cm]{smaller.pdf}
-\caption{aa}
+\caption{Funnels computed with the initial region with $\xi^s$.}
 \end{subfigure}
 \begin{subfigure}[b]{0.5\textwidth}
 \centering
 \includegraphics[width=7.0cm]{bigger.pdf}
-\caption{aa}
+\caption{Funnels computed with the initial region with $\xi^b$.}
 \end{subfigure}
-
 \caption{
-The state history of the aerial manipulators 1 (left) and 2 (right). The green and black lines represent the desired and the measured states, respectively.}
-\label{fig:am1State}
+Funnels computed with various values of $\Delta_k$ and $\xi_0$. The detailed parameters and settings are available in table. \ref{table:settings}. }
+\label{fig:funnelSamples}
 \end{figure*}
 
+\subsection{Funnel library}
+In the optimization problem, the list of parameters are~: the initial set of error states $\xi_0$; 
+the gain matrices $K_p$ and $K_d$; 
+the norm of maximum attitude angle error $\bar{\text{s}}_\Phi$;
+the rotor drag coefficient $c_d$; and the lumped disturbance term $\Delta$. 
+Among these parameters, the gain matrices are manually set by an operator to satisfy the required flight performance in accordance with applications. 
+The attitude error $\bar{\text{s}}_\Phi$ and drag coefficient $c_d$ terms should be seleceted to be comparable with respect to the actual values.
+Accordingly, the terms $K_p$, $K_d$, $c_d$, and $\bar{\text{s}}_\Phi$ can be set with the current setting of the multirotor.
+However, the lumped disturbance term $\Delta(=\bar{\delta}+c_d|\dot{p}^r|+\bar{\text{s}}_\Phi|ge_3 + \ddot{p}^r|)$ keeps changing while a multirotor is in flight. 
+For example, the external disturbance, e.g. wind condition, could be different location to location.
+Also, the reference velocity $\dot{p}^r$ and accelerations $\ddot{p}^r$ are the function of the reference trajectory so that the terms $|\dot{p}^r|$ and $|ge_3+\ddot{p}^r|$ will change while the multirotor in maneuver.
+According to the stability analysis in Sec. \ref{sec:}, 
+the radius of the ultimate bound varies with different $\Delta$, 
+and the behavior of the error states will also be altered with respect to $\Delta$. 
+Therefore, we evaluate \textit{library of funnel} with various values of $\Delta$, and use them depending on the flight condition.
+For example, if the external force information is available apriori $\delta$, 
+the rest terms $\dot{p}^r$ and $\ddot{p}^r$ are directly computable with the reference trajectory. 
+Therefore, before flight operation, we can guess $\Delta$ and look up the library of funnel to see the region that error states can reside while in flight.
 
+Let $\mathcal{B}_\Delta$ be the ultimate bound of the error dynamics when the norm of disturbance is $\Delta$.
+For each $\Delta$ value, we evaluate the funnel with two different settings of initial sets $j = \{\xi_s,\xi_b\}$ such that $\mathcal{B}_\Delta\subset\xi_b$ and $\xi_s\subset\mathcal{B}_\Delta$.
+By doing this, we can see how the error states behave until they reach their ultimate bound from both smaller and larger regions.
+
+We generate the funnel library with different settings of disturbances $\Delta_l$ with $l(=1,\cdots,L)$ and initial conditions $j=\{b,s\}$ indicating the superscript of $\xi_b$ and $\xi_s$.
+Then, a funnel could be denoted as $F_{\Delta_l}^j(n)$ where $n(=1,\cdots,N)$ is the sequence number of funnel generated with the setting $\Delta_l$ and $j$.
+In summary, a library of funnel could be organized as the set such as $\mathcal{F} = \{F_{\Delta_1},\cdots,F_{\Delta_L}\}$.
+Each element is the funnel $F_{\Delta_l}$ evaluated with different value of disturbance $\Delta_l$, 
+and it is constructed with funnels two different set of initial conditions as $F_{\Delta_l} = \{F_{\Delta_l}^b,F_{\Delta_l}^s\}$. The elements are the sequence of compact sets such as $F_{\Delta_l}^j = \{F_{\Delta}^j(0),\cdots,F_{\Delta}^j(N)\}$.
+Also, as the definition of the funnel, $F_{\Delta_l}^j(n)$ is the set of of error defined as $P_{\Delta_l}^j(n) \leq \rho_{\Delta_l}^j(n)$ where $P_{\Delta_l}^j(n)$ and $\rho_{\Delta_l}^j$ are the parameters optimzed in the funnel generation.
+%$P_{\Delta_l}^j(n)$ and $\rho_{\Delta_l}^j(n)$ are the matrix and values defining an ellipsoid with respect to $F_{\Delta_l}^j(n)$.
+
+
+As an example, we have generated funnels with the setting in table \ref{table:settings}.
+Funnels are optimized with the $\Delta_k$ for every $0.1$ from $0.3$ to $2.5\;[m s^\text{-2}]$. 
+The computed funnels are displayed in fig. \ref{fig:funnelSamples}.
+The funnel, which is ellipsoid, is projected to each coordinate for visualization purposes.
+There are two notable characteristics from the generated funnels shown in fig. \ref{fig:funnelSamples}. 
+The first one is that the found ultimate bounds are similar regardless of initial condition if the disturbance $\Delta_k$ is set to similar value. 
+The second one is that the ultimate bounds are proportional to the value of $\Delta_k$. 
+It is the expected result from the analysis in eq. \eqref{eq:expected}.
+
+\begin{table}[b]
+\begin{center}
+\begin{tabular}{|r|l||r|l|} 
+\hline
+param & value & param & value \\ \hline \hline
+$\text{d}t$ & 0.05 [s] & $N$ & 120 \\ \hline
+$K_{p,x}$ & 10 [s$^\text{-2}$] & $K_{v,x}$ & 4 [s$^\text{-1}$] \\ \hline
+$K_{p,y}$ & 10 [s$^\text{-2}$] & $K_{v,y}$ & 4 [s$^\text{-1}$] \\ \hline
+$K_{p,z}$ & 15 [s$^\text{-2}$] & $K_{v,z}$ & 6 [s$^\text{-1}$] \\ \hline
+\multirow{2}{*}{$\bar{\text{s}}_\Phi$} & 0.035 [$\cdot$] & \multirow{2}{*}{$R^b\;(\xi^b)$} & diag([1.0 1.0 1.0 0.1 0.1 0.1]) \\ 
+& $\approx\sin2^\circ$ & & \;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\; [$m^\text{-2}$, $m^\text{-2}s^\text{2}$] \\ \hline
+$c_d$ & 0.31 [$s^\text{-1}$]                         & $R^s\;(\xi^s)$ & diag([39 39 39 1.6 1.6 1.6]) \\ \hline
+\end{tabular}
+\caption{parameters used for computing funnel library} \label{table:settings} 
+\end{center}
+\end{table}
+
+\subsection{Combining funnels}
+\begin{algorithm}
+  \caption{Combining funnels around reference trajectory
+    \label{alg:funnel}}
+  \begin{algorithmic}[1]
+    \Statex
+    \Function{Combine Funnels }{$\Delta(t)$, $\xi_o$, $\mathcal{F}$}
+	\State \textbf{find }$l(0)$\textbf{ s.t.} $\Delta_{l-1} < \Delta(0) \leq \Delta_l$ 
+	\State \textbf{find smallest} $F_{\Delta_l} \in {F}$ \textbf{s.t.} ${F}=\{F_{\Delta_l}|\xi_0 \subset F_{\Delta_l}\}$
+\State $j(0) \gets $ \text{initial condition of }$F_{\Delta_l}$
+\State $n(0) \gets $ \text{index of }$F_{\Delta_l}$
+      \For{$t \gets 1 \textrm{ to } T$}
+				\State \textbf{find }$l(t)$\textbf{ s.t. }$\Delta_{l-1} < \Delta(t) \leq \Delta_l$
+				\If{$l(t) = l(t-1)$}
+				\State $j(t) \gets j(t-1)$ 
+				\State $n(t) \gets n(t-1)+1$
+				\Else
+				\State \textbf{find smallest} $F_{\Delta_l} \in {F}$ \textbf{s.t.} 
+				\State ${F}=\{F_{\Delta_l}|F_{\Delta_{l(t-1)}}^{j(t-1)}(n(t-1)) \subset F_{\Delta_l}\}$
+				\State $j(t) \gets$ \text{initial condition of }$F_{\Delta_l}$ 
+				\State $n(t) \gets$ (\text{index of }$F_{\Delta_l}) + 1$
+				\EndIf
+      \EndFor
+      \State \Return{$l(t)$, $j(t)$, $n(t)$}
+    \EndFunction
+  \end{algorithmic}
+\end{algorithm}
+Definition of smallest. 
+We want to sequence the best fitting funneli, meaning that the ellipsoid with the smallest volume while enclosing the previous funnel.
+The volume of an ellipsoid is proportional to the determinant of the matrix $P_{\Delta_l}^j(n)/\rho_{\Delta_l}^j(n)$.
+Therefore, we easily can compare the size of the funnels.
+
+How to compute subset?
+The center of the ellipsoids are coincident. Then, we can easily check whether $F_1$ is the subset of $F_2$ or not.
+Since the sets are defined such as $F_1 = \{e|e^\top R_1 e \leq 1\}$ and $F_2 = \{e|e^\top R_2 e \leq 1\}$, we can show that $F_1 \subset F_2$ is satisfied when $\lambda_{\max}(D_1^{-1}R_2D_1^{-\top} )\leq 1$ where $D_1$ is the Cholesky decomposition of $R_1( = D_1D_1^\top)$.
+
+\subsection{Funnel for checking robustness of reference trajectories}
+Once we have a multirotor and a reference trajectory, we can compute funnel around the reference trajectory. 
+To check whether the given trajectory robust or not with respect to the obstacles, we can do collision check with the funnel and obstacles.
+
+The method for checking collision between funnel and obstacles will be explained in detail.
+
+%The projected ellipsoid is
+%\begin{equation}
+%P_x = P_p - P_{pv}^2 P_v^{-1}. \nonumber
+%\end{equation}
+
+\section{Simulations}
+Monte Carlo simulation will be inserted to show that the funnel can encapsulate the error trajectories as supposed. 
+\subsection{Simulation setup}
+Simulation setup will be explained. Environment would be the Gazobo integrated with RotorS UAV simulator which explicitely incorporating the rotor drag terms.
+Multirotor will follow the minimum snap trajectories generated with to connect randomly generated waypoints.
+The initial condition is also randomly generated inside of the ultimate bound. 
+Hence, the goal of the simulation is to show that the trajectories starting inside of the ultimate bound (evaluated with the computed funnel) cannot escape the ultimate bound.
+\subsection{Simulation results}
+Plan is to giving explanation with the following style figure \ref{fig:simulation}
+\begin{figure}
+\centering
+\includegraphics[width=9cm]{monteCarlo.pdf}
+\caption{The green ellipse is the ultimate bound projected to each coordinate. 
+Since the gains $K_{p,x}$ and $K_{p,y}$, and $K_{v,x}$ and $K_{v,y}$ are set to same values, errors on $x$ and $y$ coordinates are displayed in the same figure.} \label{fig:simulation}
+\end{figure}
+
+\section{Experiments}
+Experimental scenario is the following. 
+We want to find the \textit{safe} velocity that a multirotor can go through a pipe type object as shown in fig. \ref{fig:experimentalResult}.
+
+\subsection{Experimental setup}
+\subsection{Experimental results}
+\begin{figure*}[!h]
+\begin{subfigure}[b]{0.5\textwidth}
+\centering
+\includegraphics[width=9.0cm]{slow.pdf}
+\caption{The reference speed between the blue and red points is $1.0$ m/s.}
+\end{subfigure}
+\begin{subfigure}[b]{0.5\textwidth}
+\centering
+\includegraphics[width=9.0cm]{fast.pdf}
+\caption{The reference speed between the blue and red points is $2.6$ m/s.}
+\end{subfigure}
+\caption{The green and black lines are the reference and measured trajectories, respectively. The shaded regions represent the funnels around the reference trajectory. The goal of this experiment is to move inside of the pipe between the blue and red points safely.}
+\label{fig:experimentalResult}
+\end{figure*}
 
 \section{CONCLUSIONS}
 
-A conclusion section is not required. Although a conclusion may review the main points of the paper, do not replicate the abstract as the conclusion. A conclusion might elaborate on the importance of the work or suggest applications and extensions. 
 
-\addtolength{\textheight}{-12cm}   % This command serves to balance the column lengths
-                                  % on the last page of the document manually. It shortens
-                                  % the textheight of the last page by a suitable amount.
-                                  % This command does not take effect until the next page
-                                  % so it should come on the page before the last. Make
-                                  % sure that you do not shorten the textheight too much.
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-
+%\addtolength{\textheight}{-12cm}   % This command serves to balance the column lengths
+%                                  % on the last page of the document manually. It shortens
+%                                  % the textheight of the last page by a suitable amount.
+%                                  % This command does not take effect until the next page
+%                                  % so it should come on the page before the last. Make
+%                                  % sure that you do not shorten the textheight too much.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section*{APPENDIX}
 
-Appendixes should appear before the acknowledgment.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section*{ACKNOWLEDGMENT}
 
-The preferred spelling of the word ÒacknowledgmentÓ in America is without an ÒeÓ after the ÒgÓ. Avoid the stilted expression, ÒOne of us (R. B. G.) thanks . . .Ó  Instead, try ÒR. B. G. thanksÓ. Put sponsor acknowledgments in the unnumbered footnote on the first page.
-
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-References are important to the reader; therefore, each citation must be complete and correct. If at all possible, references should be commonly available publications.
-
 
 
 \begin{thebibliography}{99}
 
 \bibitem{c1} G. O. Young, ÒSynthetic structure of industrial plastics (Book style with paper title and editor),Ó 	in Plastics, 2nd ed. vol. 3, J. Peters, Ed.  New York: McGraw-Hill, 1964, pp. 15Ð64.
-\bibitem{c2} W.-K. Chen, Linear Networks and Systems (Book style).	Belmont, CA: Wadsworth, 1993, pp. 123Ð135.
-\bibitem{c3} H. Poor, An Introduction to Signal Detection and Estimation.   New York: Springer-Verlag, 1985, ch. 4.
-\bibitem{c4} B. Smith, ÒAn approach to graphs of linear forms (Unpublished work style),Ó unpublished.
-\bibitem{c5} E. H. Miller, ÒA note on reflector arrays (Periodical styleÑAccepted for publication),Ó IEEE Trans. Antennas Propagat., to be publised.
-\bibitem{c6} J. Wang, ÒFundamentals of erbium-doped fiber amplifiers arrays (Periodical styleÑSubmitted for publication),Ó IEEE J. Quantum Electron., submitted for publication.
-\bibitem{c7} C. J. Kaufman, Rocky Mountain Research Lab., Boulder, CO, private communication, May 1995.
-\bibitem{c8} Y. Yorozu, M. Hirano, K. Oka, and Y. Tagawa, ÒElectron spectroscopy studies on magneto-optical media and plastic substrate interfaces(Translation Journals style),Ó IEEE Transl. J. Magn.Jpn., vol. 2, Aug. 1987, pp. 740Ð741 [Dig. 9th Annu. Conf. Magnetics Japan, 1982, p. 301].
-\bibitem{c9} M. Young, The Techincal Writers Handbook.  Mill Valley, CA: University Science, 1989.
-\bibitem{c10} J. U. Duncombe, ÒInfrared navigationÑPart I: An assessment of feasibility (Periodical style),Ó IEEE Trans. Electron Devices, vol. ED-11, pp. 34Ð39, Jan. 1959.
-\bibitem{c11} S. Chen, B. Mulgrew, and P. M. Grant, ÒA clustering technique for digital communications channel equalization using radial basis function networks,Ó IEEE Trans. Neural Networks, vol. 4, pp. 570Ð578, July 1993.
-\bibitem{c12} R. W. Lucky, ÒAutomatic equalization for digital communication,Ó Bell Syst. Tech. J., vol. 44, no. 4, pp. 547Ð588, Apr. 1965.
-\bibitem{c13} S. P. Bingulac, ÒOn the compatibility of adaptive controllers (Published Conference Proceedings style),Ó in Proc. 4th Annu. Allerton Conf. Circuits and Systems Theory, New York, 1994, pp. 8Ð16.
-\bibitem{c14} G. R. Faulhaber, ÒDesign of service systems with priority reservation,Ó in Conf. Rec. 1995 IEEE Int. Conf. Communications, pp. 3Ð8.
-\bibitem{c15} W. D. Doyle, ÒMagnetization reversal in films with biaxial anisotropy,Ó in 1987 Proc. INTERMAG Conf., pp. 2.2-1Ð2.2-6.
-\bibitem{c16} G. W. Juette and L. E. Zeffanella, ÒRadio noise currents n short sections on bundle conductors (Presented Conference Paper style),Ó presented at the IEEE Summer power Meeting, Dallas, TX, June 22Ð27, 1990, Paper 90 SM 690-0 PWRS.
-\bibitem{c17} J. G. Kreifeldt, ÒAn analysis of surface-detected EMG as an amplitude-modulated noise,Ó presented at the 1989 Int. Conf. Medicine and Biological Engineering, Chicago, IL.
-\bibitem{c18} J. Williams, ÒNarrow-band analyzer (Thesis or Dissertation style),Ó Ph.D. dissertation, Dept. Elect. Eng., Harvard Univ., Cambridge, MA, 1993. 
-\bibitem{c19} N. Kawasaki, ÒParametric study of thermal and chemical nonequilibrium nozzle flow,Ó M.S. thesis, Dept. Electron. Eng., Osaka Univ., Osaka, Japan, 1993.
-\bibitem{c20} J. P. Wilkinson, ÒNonlinear resonant circuit devices (Patent style),Ó U.S. Patent 3 624 12, July 16, 1990. 
-
+%\bibitem{c2} W.-K. Chen, Linear Networks and Systems (Book style).	Belmont, CA: Wadsworth, 1993, pp. 123Ð135.
+%\bibitem{c3} H. Poor, An Introduction to Signal Detection and Estimation.   New York: Springer-Verlag, 1985, ch. 4.
+%\bibitem{c4} B. Smith, ÒAn approach to graphs of linear forms (Unpublished work style),Ó unpublished.
+%\bibitem{c5} E. H. Miller, ÒA note on reflector arrays (Periodical styleÑAccepted for publication),Ó IEEE Trans. Antennas Propagat., to be publised.
+%\bibitem{c6} J. Wang, ÒFundamentals of erbium-doped fiber amplifiers arrays (Periodical styleÑSubmitted for publication),Ó IEEE J. Quantum Electron., submitted for publication.
+%\bibitem{c7} C. J. Kaufman, Rocky Mountain Research Lab., Boulder, CO, private communication, May 1995.
+%\bibitem{c8} Y. Yorozu, M. Hirano, K. Oka, and Y. Tagawa, ÒElectron spectroscopy studies on magneto-optical media and plastic substrate interfaces(Translation Journals style),Ó IEEE Transl. J. Magn.Jpn., vol. 2, Aug. 1987, pp. 740Ð741 [Dig. 9th Annu. Conf. Magnetics Japan, 1982, p. 301].
+%\bibitem{c9} M. Young, The Techincal Writers Handbook.  Mill Valley, CA: University Science, 1989.
+%\bibitem{c10} J. U. Duncombe, ÒInfrared navigationÑPart I: An assessment of feasibility (Periodical style),Ó IEEE Trans. Electron Devices, vol. ED-11, pp. 34Ð39, Jan. 1959.
+%\bibitem{c11} S. Chen, B. Mulgrew, and P. M. Grant, ÒA clustering technique for digital communications channel equalization using radial basis function networks,Ó IEEE Trans. Neural Networks, vol. 4, pp. 570Ð578, July 1993.
+%\bibitem{c12} R. W. Lucky, ÒAutomatic equalization for digital communication,Ó Bell Syst. Tech. J., vol. 44, no. 4, pp. 547Ð588, Apr. 1965.
+%\bibitem{c13} S. P. Bingulac, ÒOn the compatibility of adaptive controllers (Published Conference Proceedings style),Ó in Proc. 4th Annu. Allerton Conf. Circuits and Systems Theory, New York, 1994, pp. 8Ð16.
+%\bibitem{c14} G. R. Faulhaber, ÒDesign of service systems with priority reservation,Ó in Conf. Rec. 1995 IEEE Int. Conf. Communications, pp. 3Ð8.
+%\bibitem{c15} W. D. Doyle, ÒMagnetization reversal in films with biaxial anisotropy,Ó in 1987 Proc. INTERMAG Conf., pp. 2.2-1Ð2.2-6.
+%\bibitem{c16} G. W. Juette and L. E. Zeffanella, ÒRadio noise currents n short sections on bundle conductors (Presented Conference Paper style),Ó presented at the IEEE Summer power Meeting, Dallas, TX, June 22Ð27, 1990, Paper 90 SM 690-0 PWRS.
+%\bibitem{c17} J. G. Kreifeldt, ÒAn analysis of surface-detected EMG as an amplitude-modulated noise,Ó presented at the 1989 Int. Conf. Medicine and Biological Engineering, Chicago, IL.
+%\bibitem{c18} J. Williams, ÒNarrow-band analyzer (Thesis or Dissertation style),Ó Ph.D. dissertation, Dept. Elect. Eng., Harvard Univ., Cambridge, MA, 1993. 
+%\bibitem{c19} N. Kawasaki, ÒParametric study of thermal and chemical nonequilibrium nozzle flow,Ó M.S. thesis, Dept. Electron. Eng., Osaka Univ., Osaka, Japan, 1993.
+%\bibitem{c20} J. P. Wilkinson, ÒNonlinear resonant circuit devices (Patent style),Ó U.S. Patent 3 624 12, July 16, 1990. 
+%
 
 
 
