@@ -536,17 +536,17 @@ $c_d$ & 0.31 [$s^\text{-1}$]                         & $R^s\;(\xi^s)$ & diag([39
 
 \subsection{Combining funnels}
 \begin{algorithm}
-  \caption{Combining funnels around reference trajectory
+  \caption{Assigning funnels along reference trajectory
     \label{alg:funnel}}
   \begin{algorithmic}[1]
     \Statex
-    \Function{Combine Funnels }{$\Delta(t)$, $\xi_o$, $\mathcal{F}$}
-	\State \textbf{find }$l(0)$\textbf{ s.t.} $\Delta_{l-1} < \Delta(0) \leq \Delta_l$ 
+    \Function{Combine Funnels }{$\Delta_M(t)$, $\xi_o$, $\mathcal{F}$}
+	\State \textbf{find }$l(0)$\textbf{ s.t.} $\Delta_{l-1} < \Delta_M(0) \leq \Delta_l$ 
 	\State \textbf{find smallest} $F_{\Delta_l} \in {F}$ \textbf{s.t.} ${F}=\{F_{\Delta_l}|\xi_0 \subset F_{\Delta_l}\}$
 \State $j(0) \gets $ \text{initial condition of }$F_{\Delta_l}$
 \State $n(0) \gets $ \text{index of }$F_{\Delta_l}$
       \For{$t \gets 1 \textrm{ to } T$}
-				\State \textbf{find }$l(t)$\textbf{ s.t. }$\Delta_{l-1} < \Delta(t) \leq \Delta_l$
+				\State \textbf{find }$l(t)$\textbf{ s.t. }$\Delta_{l-1} < \Delta_M(t) \leq \Delta_l$
 				\If{$l(t) = l(t-1)$}
 				\State $j(t) \gets j(t-1)$ 
 				\State $n(t) \gets n(t-1)+1$
@@ -561,14 +561,22 @@ $c_d$ & 0.31 [$s^\text{-1}$]                         & $R^s\;(\xi^s)$ & diag([39
     \EndFunction
   \end{algorithmic}
 \end{algorithm}
+We want to evaluate the possible boundary of the state $p = e_p + p^r$ using the funnel library by assigning funnels along the reference trajectory.
+In Sec. \ref{sec:}, we computed the funnel with discrete time.
+In accordance with that, we also discretize the reference trajectory and the corresponding lumped disturbance terms $\Delta(t)$ as shown in fig. \ref{fig:combiningConcept}. 
+For each time segment, we can compute the maximum disturbance $\Delta_M(t)$ and find the disturbance level $\Delta_l$ satisfying $\Delta_{l-1} < \Delta_M(t) \leq \Delta_l$. 
+The funnel $F_{\Delta_l}$ is computed with the maximum disturbance $\Delta_l$ and the magnitude of disturbance during the time segment $t \in (t(t-1),t(t)]$ is similar and smaller than $\Delta_l$. Therefore, we can expect that the funnel $F_{\Delta_l}$ can mimic the behavior of the actual funnel. 
+
+As we can refer from the definition of the funnel in eq. \eqref{eq:funnel1},
+
 Definition of smallest. 
-We want to sequence the best fitting funneli, meaning that the ellipsoid with the smallest volume while enclosing the previous funnel.
+We want to sequence the best fitting funnel, meaning that the ellipsoid with the smallest volume while enclosing the previous funnel.
 The volume of an ellipsoid is proportional to the determinant of the matrix $P_{\Delta_l}^j(n)/\rho_{\Delta_l}^j(n)$.
-Therefore, we easily can compare the size of the funnels.
+Therefore, we easily can compare the size of the funnels that encapsulating the funnel in the previous time sequence funnel.
 
 How to compute subset?
-The center of the ellipsoids are coincident. Then, we can easily check whether $F_1$ is the subset of $F_2$ or not.
-Since the sets are defined such as $F_1 = \{e|e^\top R_1 e \leq 1\}$ and $F_2 = \{e|e^\top R_2 e \leq 1\}$, we can show that $F_1 \subset F_2$ is satisfied when $\lambda_{\max}(D_1^{-1}R_2D_1^{-\top} )\leq 1$ where $D_1$ is the Cholesky decomposition of $R_1( = D_1D_1^\top)$.
+The center of the ellipsoids are coincident. Then, we can easily check whether the set $F_1$ is the subset of $F_2$ or not.
+Since the sets are defined such as a quadratic functions as $F_1 = \{e|e^\top R_1 e \leq 1\}$ and $F_2 = \{e|e^\top R_2 e \leq 1\}$, we can show that $F_1 \subset F_2$ is satisfied when $\lambda_{\max}(D_1^{-1}R_2D_1^{-\top} )\leq 1$ where $D_1$ is the Cholesky decomposition of $R_1( = D_1D_1^\top)$.
 
 \subsection{Funnel for checking robustness of reference trajectories}
 Once we have a multirotor and a reference trajectory, we can compute funnel around the reference trajectory. 
