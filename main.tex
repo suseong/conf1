@@ -34,7 +34,10 @@
 \usepackage{color}
 \usepackage{multirow}
 \usepackage{algpseudocode,algorithm,algorithmicx}
-%\usepackage[]{algorithm2e}
+%\usepackage{algorithm}
+%\usepackage{algorithmicx}
+%%\usepackage[]{algorithm2e}
+%\usepackage{algcompatible}
 
 %\SetKwInput{KwFind}{Find}
 
@@ -486,36 +489,18 @@ The attitude error $\bar{\text{s}}_\Phi$ and drag coefficient $c_d$ terms should
 Accordingly, the terms $K_p$, $K_d$, $c_d$, and $\bar{\text{s}}_\Phi$ can be set with the current setting of the multirotor.
 However, the lumped disturbance term $\Delta(=\bar{\delta}+c_d|\dot{p}^r|+\bar{\text{s}}_\Phi|ge_3 + \ddot{p}^r|)$ keeps changing while a multirotor is in flight. 
 For example, the external disturbance, e.g. wind condition, could be different location to location.
-Also, the reference velocity $\dot{p}^r$ and accelerations $\ddot{p}^r$ are the function of the reference trajectory so that the terms $|\dot{p}^r|$ and $|ge_3+\ddot{p}^r|$ will change while the multirotor in maneuver.
-According to the stability analysis in Sec. \ref{sec:}, 
-the radius of the ultimate bound varies with different $\Delta$, 
+Also, the reference velocity $\dot{p}^r$ and accelerations $\ddot{p}^r$ are the functions of the reference trajectory so that the terms $|\dot{p}^r|$ and $|ge_3+\ddot{p}^r|$ will change while the multirotor in maneuver.
+According to the stability analysis in eq. \eqref{eq:expected}, 
+the radius of the ultimate bound varies proportionally with $\Delta$, 
 and the behavior of the error states will also be altered with respect to $\Delta$. 
-Therefore, we evaluate \textit{library of funnel} with various values of $\Delta$, and use them depending on the flight condition.
-For example, if the external force information is available apriori $\delta$, 
-the rest terms $\dot{p}^r$ and $\ddot{p}^r$ are directly computable with the reference trajectory. 
-Therefore, before flight operation, we can guess $\Delta$ and look up the library of funnel to see the region that error states can reside while in flight.
+Therefore, we evaluate \textit{library of funnel} with various values of $\Delta$, which will be denoted as $\Delta_l$ with $l(=1,\cdots,L)$, and use them depending on the flight condition.
+For example, if the external force $\delta$ is available apriori, 
+the terms $|\dot{p}^r|$ and $|ge_3 + \ddot{p}^r|$ are directly computable with the reference trajectory. 
+Therefore, we can guess the $\Delta$ along the reference trajectory and look up the library of funnel to compute how the error state will behave.
 
-Let $\mathcal{B}_\Delta$ be the ultimate bound of the error dynamics when the norm of disturbance is $\Delta$.
-For each $\Delta$ value, we evaluate the funnel with two different settings of initial sets $j = \{\xi_s,\xi_b\}$ such that $\mathcal{B}_\Delta\subset\xi_b$ and $\xi_s\subset\mathcal{B}_\Delta$.
+Let $\mathcal{B}_{\Delta_l}$ be the ultimate bound of the error dynamics when the norm of disturbance is $\Delta_l$.
+For each $\Delta_l$, we evaluate the funnel with two different settings of initial sets such that $\mathcal{B}_{\Delta_l}\subset\xi_b$ and $\xi_s\subset\mathcal{B}_{\Delta_l}$.
 By doing this, we can see how the error states behave until they reach their ultimate bound from both smaller and larger regions.
-
-We generate the funnel library with different settings of disturbances $\Delta_l$ with $l(=1,\cdots,L)$ and initial conditions $j=\{b,s\}$ indicating the superscript of $\xi_b$ and $\xi_s$.
-Then, a funnel could be denoted as $F_{\Delta_l}^j(n)$ where $n(=1,\cdots,N)$ is the sequence number of funnel generated with the setting $\Delta_l$ and $j$.
-In summary, a library of funnel could be organized as the set such as $\mathcal{F} = \{F_{\Delta_1},\cdots,F_{\Delta_L}\}$.
-Each element is the funnel $F_{\Delta_l}$ evaluated with different value of disturbance $\Delta_l$, 
-and it is constructed with funnels two different set of initial conditions as $F_{\Delta_l} = \{F_{\Delta_l}^b,F_{\Delta_l}^s\}$. The elements are the sequence of compact sets such as $F_{\Delta_l}^j = \{F_{\Delta}^j(0),\cdots,F_{\Delta}^j(N)\}$.
-Also, as the definition of the funnel, $F_{\Delta_l}^j(n)$ is the set of of error defined as $P_{\Delta_l}^j(n) \leq \rho_{\Delta_l}^j(n)$ where $P_{\Delta_l}^j(n)$ and $\rho_{\Delta_l}^j$ are the parameters optimzed in the funnel generation.
-%$P_{\Delta_l}^j(n)$ and $\rho_{\Delta_l}^j(n)$ are the matrix and values defining an ellipsoid with respect to $F_{\Delta_l}^j(n)$.
-
-
-As an example, we have generated funnels with the setting in table \ref{table:settings}.
-Funnels are optimized with the $\Delta_k$ for every $0.1$ from $0.3$ to $2.5\;[m s^\text{-2}]$. 
-The computed funnels are displayed in fig. \ref{fig:funnelSamples}.
-The funnel, which is ellipsoid, is projected to each coordinate for visualization purposes.
-There are two notable characteristics from the generated funnels shown in fig. \ref{fig:funnelSamples}. 
-The first one is that the found ultimate bounds are similar regardless of initial condition if the disturbance $\Delta_k$ is set to similar value. 
-The second one is that the ultimate bounds are proportional to the value of $\Delta_k$. 
-It is the expected result from the analysis in eq. \eqref{eq:expected}.
 
 \begin{table}[b]
 \begin{center}
@@ -534,49 +519,116 @@ $c_d$ & 0.31 [$s^\text{-1}$]                         & $R^s\;(\xi^s)$ & diag([39
 \end{center}
 \end{table}
 
+The funnel library is computed with different settings of $\Delta_l$ with $l(=1,\cdots,l_{M})$ and initial conditions $\xi_0$ with $j=\{b,s\}$ indicating the subscript of $\xi_b$ and $\xi_s$.
+Then, a funnel could be denoted as $F_{\Delta_l}^j(i)$ where $i(=1,\cdots,i_{M})$ is the sequence number of funnel generated with the setting $\Delta_l$ and $j$.
+In summary, a library of funnel is organized as the set such as $\mathcal{F} = \{F_{\Delta_1},\cdots,F_{\Delta_L}\}$.
+Each element is the funnel $F_{\Delta_l}$ evaluated with different value of disturbance $\Delta_l$, 
+and it is constructed with funnels two different set of initial conditions as $F_{\Delta_l} = \{F_{\Delta_l}^b,F_{\Delta_l}^s\}$. The elements are the sequence of compact sets such as $F_{\Delta_l}^j = \{F_{\Delta}^j(1),\cdots,F_{\Delta}^j(i_{M})\}$.
+Also, as the definition of the funnel, the discretized funnel can be denoted as follows:
+\begin{equation}
+F_{\Delta_l}^j(i) = \{e| e^\top P_{\Delta_l}^j(i) e \leq  \alpha_{\Delta_l}^j(i)\} \label{eq:discreteFunnel}
+\end{equation}
+where $P_{\Delta_l}^j(i)$ and $\alpha_{\Delta_l}^j(i)$ are the parameters optimized in the funnel generation.
+
+As an example, we have generated funnels with the setting in table \ref{table:settings}.
+Funnels are optimized with the $\Delta_l$ for every $0.1$ from $0.5$ to $3.0\;[m s^\text{-2}]$. 
+The computed funnels are displayed in fig. \ref{fig:funnelSamples}.
+The funnel, which is ellipsoid, is projected to each coordinate for visualization purposes.
+There are two notable characteristics from the generated funnels shown in fig. \ref{fig:funnelSamples}. 
+First, if the disturbance $\Delta_l$ is set to the same value, the funnels converges to the similar values regardless $j=\{s,b\}$.
+%the found ultimate bounds are similar regardless of initial condition if the disturbance $\Delta_k$ is set to similar value. 
+The second one is that the ultimate bounds are proportional to the value of $\Delta_l$. 
+It is the expected result from the analysis in eq. \eqref{eq:expected}.
+
 \subsection{Combining funnels}
-\begin{algorithm}
+\begin{figure}[t]
+\centering
+\includegraphics[width=8cm]{funnel_combine.pdf}
+\caption{Concept figure to explain how to connect funnels.}
+% with respect to the maximum disturbance during each time segment. For example, in the figure, $\Delta(t_{n-2}) = \Delta_l$, $\Delta(t_{n-1}) = \Delta_{l}$, $\Delta_M(t_{n}) = \Delta_l$, $\Delta_M(t_{n+1}) = \Delta_{l+2}$, and $\Delta_M(t_{n+2}) = \Delta_{l+2}$.} 
+ \label{fig:combiningConcept}
+\end{figure}
+
+We want to evaluate the possible boundary of the state $p = e_p + p^r$ using the funnel library by assigning funnels along the reference trajectory. 
+In sec. \label{sec:computingFunnel}, we described the method how to generate funnels for the multirotor error dynamics on translational motion with various fixed disturbance norm values.
+However, the disturbance $\Delta(t)$ will keep varying with respect to time in most of flight operation scenarios.
+For example, let us assume that we use only one funnel $F_{\Delta_l}^j$ with the $j$ satisfying $\xi_0 \subset \xi_j$. 
+Then, we have to chose $\Delta_l$ satisfying $|\Delta(t)| \leq \Delta_l$ because it is the required condition used in eq. 16\eqref{eq:}.
+In this case, the funnel analysis will indicate that set of error will eventually converge to the ultimate bound when $|\Delta| \leq \Delta_l$. Then, the selected funnel would be too conservative since the size of the ultimate bound is proportional to the norm of disturbance, and the actual norm of disturbance would be smaller than $\Delta_l$. 
+Hence, in this subsection, we present the method for applying the funnel library computed with the fixed values of $\Delta_l$ to the general cases with time varying $\Delta(t)$. 
+\begin{algorithm}[t]
   \caption{Assigning funnels along reference trajectory
     \label{alg:funnel}}
   \begin{algorithmic}[1]
     \Statex
-    \Function{Combine Funnels }{$\Delta_M(t)$, $\xi_o$, $\mathcal{F}$}
-	\State \textbf{find }$l(0)$\textbf{ s.t.} $\Delta_{l-1} < \Delta_M(0) \leq \Delta_l$ 
-	\State \textbf{find smallest} $F_{\Delta_l} \in {F}$ \textbf{s.t.} ${F}=\{F_{\Delta_l}|\xi_0 \subset F_{\Delta_l}\}$
-\State $j(0) \gets $ \text{initial condition of }$F_{\Delta_l}$
-\State $n(0) \gets $ \text{index of }$F_{\Delta_l}$
-      \For{$t \gets 1 \textrm{ to } T$}
-				\State \textbf{find }$l(t)$\textbf{ s.t. }$\Delta_{l-1} < \Delta_M(t) \leq \Delta_l$
-				\If{$l(t) = l(t-1)$}
-				\State $j(t) \gets j(t-1)$ 
-				\State $n(t) \gets n(t-1)+1$
+    \Function{Combine Funnels }{$\Delta(t)$, $\xi_o$, $\mathcal{F}$}
+	\State \textbf{find }$\Delta_{l}$\textbf{ s.t.} $\Delta_{l-1} < \Delta(0) \leq \Delta_l$
+	\State $\Delta_{0} \gets \Delta_l$
+	\State \textbf{find $i$ and $j$ with smallest volume of} $\bar{F}$  \textbf{s.t.}
+	\State $\bar{F}=\{F|\xi_0 \subset F,\;F\in F_{\Delta_0}\}$
+	\State $i_0 \gets i$ (\text{index of }$\bar{F}$)
+	\State $j_0 \gets j$ (\text{initial condition of }$\bar{F}$)
+      \For{$n \gets 1 \textrm{ to } N$}
+				\State \textbf{find }$\Delta_l$\textbf{ s.t. } $\Delta_{l-1} < \Delta_M \leq \Delta_l$
+				\State \text{where} $\Delta_M = \max(\Delta(t)),\;\forall t\in(t_{n-1},t_n]$
+				\State $\Delta_{n} \gets \Delta_l$
+				\If{$\Delta_n = \Delta_{n-1}$}
+				\State $i_n \gets i_{n-1}+1$, $j_n \gets j_{n-1}$
 				\Else
-				\State \textbf{find smallest} $F_{\Delta_l} \in {F}$ \textbf{s.t.} 
-				\State ${F}=\{F_{\Delta_l}|F_{\Delta_{l(t-1)}}^{j(t-1)}(n(t-1)) \subset F_{\Delta_l}\}$
-				\State $j(t) \gets$ \text{initial condition of }$F_{\Delta_l}$ 
-				\State $n(t) \gets$ (\text{index of }$F_{\Delta_l}) + 1$
+				\State \textbf{find $i$ and $j$ with smallest volume of} $\bar{F}$ \textbf{s.t.}  
+				\State $\bar{F}=\{F|F_{\Delta_{n-1}}^{j_{n-1}}(i_{n-1}+1) \subset {F},\;F \in F_{\Delta_n}\}$
+				\State $i_n \gets i$, $j_n \gets j$
 				\EndIf
       \EndFor
-      \State \Return{$l(t)$, $j(t)$, $n(t)$}
+      \State \Return{$l_n$, $j_n$, $i_n$ for $n=\{1,\cdots,N\}$}
     \EndFunction
   \end{algorithmic}
 \end{algorithm}
-We want to evaluate the possible boundary of the state $p = e_p + p^r$ using the funnel library by assigning funnels along the reference trajectory.
-In Sec. \ref{sec:}, we computed the funnel with discrete time.
-In accordance with that, we also discretize the reference trajectory and the corresponding lumped disturbance terms $\Delta(t)$ as shown in fig. \ref{fig:combiningConcept}. 
-For each time segment, we can compute the maximum disturbance $\Delta_M(t)$ and find the disturbance level $\Delta_l$ satisfying $\Delta_{l-1} < \Delta_M(t) \leq \Delta_l$. 
-The funnel $F_{\Delta_l}$ is computed with the maximum disturbance $\Delta_l$ and the magnitude of disturbance during the time segment $t \in (t(t-1),t(t)]$ is similar and smaller than $\Delta_l$. Therefore, we can expect that the funnel $F_{\Delta_l}$ can mimic the behavior of the actual funnel. 
 
-As we can refer from the definition of the funnel in eq. \eqref{eq:funnel1},
+Our approach for generating funnel with the time varying disturbance is selecting segments of funnels in the library in accordance with the disturbance $\Delta(t)$ at the discrete times $t_n$.
+Here, selecting segments of funnel means that we choose the disturbance level $\Delta_l$, initial condition of errors $j$, and index of the funnel $i$ for given time $t_n$.
 
-Definition of smallest. 
-We want to sequence the best fitting funnel, meaning that the ellipsoid with the smallest volume while enclosing the previous funnel.
-The volume of an ellipsoid is proportional to the determinant of the matrix $P_{\Delta_l}^j(n)/\rho_{\Delta_l}^j(n)$.
-Therefore, we easily can compare the size of the funnels that encapsulating the funnel in the previous time sequence funnel.
+First of all, we explain the method for deciding the disturbance level $\Delta_l$ for time $t_n$ which will be denoted as $\Delta_n$.
+Among all $\Delta_l$ values, the obvious choice would be using the minimum one satisfying $|\Delta(t)| \leq \Delta_l$ during $t\in(t_{n-1},t_n]$. It is because that $\Delta_l$ is the closest to the actual $|\Delta(t)|$ as well as the condition required in eq. 16\eqref{eq:} is satisfied.
+If the step size between $\Delta_l$ and time intervals are fine enough, the actual disturbance could be well reflected in the problem set in the discretized manner. 
+%Let $\Delta_n$ denote the chosen disturbance level at $t_n$.
+This procedure is described in the first row of the fig. \ref{fig:combiningConcept}.
 
-How to compute subset?
-The center of the ellipsoids are coincident. Then, we can easily check whether the set $F_1$ is the subset of $F_2$ or not.
-Since the sets are defined such as a quadratic functions as $F_1 = \{e|e^\top R_1 e \leq 1\}$ and $F_2 = \{e|e^\top R_2 e \leq 1\}$, we can show that $F_1 \subset F_2$ is satisfied when $\lambda_{\max}(D_1^{-1}R_2D_1^{-\top} )\leq 1$ where $D_1$ is the Cholesky decomposition of $R_1( = D_1D_1^\top)$.
+Secondly, with the selected disturbance level $\Delta_n$, we present the method to selecting the indices $i_n$ and $j_n$. For further explanations, for now, we assume that $\Delta_{n-1}$, $i_{n-1}$, and $j_{n-1}$ are given.
+Once we have $F_{\Delta_{n-1}}^{j_{n-1}}(i_{n-1})$, the set of error states at $t_n$ can be directly accessible from the funnel library by referring $F_{\Delta_{n-1}}^{j_{n-1}}(i_{n-1}+1)$. 
+Then, we can find $\bar{F} \in F_{\Delta_n}$ satisfying $F_{\Delta_{n-1}}^{j_{n-1}}(i_{n-1}+1) \subset \bar{F}$.
+It means that the set of error defined with $F_{\Delta_{n-1}}^{j_{n-1}}(i_{n-1})$ will evolve and be the subset of $\bar{F}$ at $t_n$. Since $\bar{F}$ complies with the definition of funnel between the time $t\in(t_{n-1},t_n]$, it is possible to assign any combination of $i_n$ and $j_n$ indicating elements of $\bar{F}$.
+However, because we are interested in the outermost bound of errors as tight as possible, we choose $i_n$ and $j_n$ indicating the funnel which has the smallest volume. Selecting the smallest volume funnel could easily done since the volume of an ellipsoid is proportional to the determinant of the ellipsoid defined in eq. \eqref{eq:}19. 
+
+Even though we explained how to find the combination with given $\Delta_{n-1}$, $i_{n-1}$, and $j_{n-1}$, in actual scenario, $\Delta_0$ can be computed in the same manner and $\xi_0$ can act a role same as $F_{\Delta_{n-1}}^{j_{n-1}}(i_{n-1}+1)$.
+Therefore, we can combine funnels in the library by iterating from $t_0$ to $t_N$.
+%By iterating the first and second procedures from the $t_0$, we can construct the funnel for all time interal $t_n$ $n=\{0,\cdots,N\}$. 
+The overall procedure explained is summarized in the algorithm 1.
+
+%As a remedy, we can mix and match multiple funnels we computed to generate a realistic funnel rather than conservative. 
+%To take advantages from the funnels computed with discrete time and disturbances $\Delta_l$, we 
+%assign one discretized disturbance among $\Delta_l$s  to represent the norm of disturbance $|\Delta(t)|$ for each time segment $t\in(t_{n-1},t_n]$. 
+%Each funnel $F_{\Delta_{l}}^j$ is evaluated with the setting $|\Delta| \leq \Delta_l$. 
+%In accordance with that, 
+%Among all $l$ values, the obvious choice would be using the minimum one satisfying $|\Delta(t)| \leq \Delta_l$ during the time segment $t\in(t_{n-1},t_n]$. It is because that $\Delta_l$ is the closest to the actual $|\Delta(t)|$ as well as the condition required in eq. 16\eqref{eq:} is satisfied.
+%If the step size between $\Delta_l$ and time intervals are fine enough, the actual disturbance could be well reflected in the problem set in the discretized manner. Let $\Delta_M$ denote the chosen disturbance level at each time interval.
+%%And since $|\Delta(t)|\leq \Delta_l$, we can fulfill the condition required in eq. 16\eqref{eq:}.
+%It is described in the first row of the fig. \ref{fig:combiningConcept}.
+%In the same manner, once we have the history of $\Delta(t)$, we can compute the maximum disturbance $\Delta_M$ for each time segment $t\in(t_{n-1},t_n]$ as described in fig. \ref{fig:combiningConcept}. Furthermore, we can find the disturbance level $\Delta_l$ satisfying $\Delta_{l-1} < \Delta_M \leq \Delta_l$. 
+%Then, the magnitude of disturbance during the time segment is close and smaller than $\Delta_l$. Thus, 
+%the funnel $F_{\Delta_l}$ computed with the maximum disturbance $\Delta_l$ is expected to behave similar to the actual funnel. 
+%As we can refer from the definition of the funnel in eq. \eqref{eq:funnel1},
+%
+%Definition of smallest. 
+%We want to sequence the best fitting funnel, meaning that the ellipsoid with the smallest volume while enclosing the previous funnel.
+%The volume of an ellipsoid is proportional to the determinant of the matrix $P_{\Delta_l}^j(n)/\rho_{\Delta_l}^j(n)$.
+%Therefore, we easily can compare the size of the funnels that encapsulating the funnel in the previous time sequence funnel.
+
+\noindent\textbf{Note.} 
+To implement the algorithm, we have to make the routine checking whether the condition $F_1 \subset F_2$ with the sets $F_1 = \{e|e^\top R_1 e \leq 1\}$ and $F_2 = \{e|e^\top R_2 e \leq 1\}$ is true or false where $R_1$ and $R_2$ are positive definite quadratic matrices.
+In $F_1$ and $F_2$, the center of the ellipsoids are coincident. 
+Since the sets are defined such as a quadratic functions,
+we can show that $F_1 \subset F_2$ is satisfied when $\lambda_{\max}(D_1^{-1}R_2D_1^{-\top} )\leq 1$ where $D_1$ is the Cholesky decomposition of $R_1( = D_1D_1^\top)$.
 
 \subsection{Funnel for checking robustness of reference trajectories}
 Once we have a multirotor and a reference trajectory, we can compute funnel around the reference trajectory. 
