@@ -92,8 +92,8 @@ For two vectors $\alpha,\beta \in \mathbb{R}^{3\times 1}$,
 we denote the inner and cross products as $\langle \alpha,\beta\rangle = \alpha^\top \beta$ and $\textbf{S}(\alpha)\beta = \alpha \times \beta$. 
 For two quaternions $\mathbf{q}_1$ and $\mathbf{q}_2$, the quaternion multiplication expressed as $\mathbf{q}_1\otimes\mathbf{q}_2$. 
 Also, $\textbf{P}(\cdot)$ is the quaternion representation of a vector $\omega\in\text{so}(3)$ such as $\textbf{P} = [0\;\omega^\top]^\top$. 
-The rotation of a vector is indicated as $\mathbf{q}_1\odot\omega = \textbf{q}_1\otimes\textbf{P}(\omega)\otimes\textbf{q}^{-1}$. 
-Furthremore, $\text{c}\cdot$ and $\text{s}\cdot$ are shorthands of $\cos\cdot$ and $\sin\cdot$, respectively.
+The rotation of a vector is indicated as $\mathbf{q}_1\odot\omega = \textbf{q}_1\otimes\textbf{P}(\omega)\otimes\textbf{q}_1^{-1}$. 
+Furthremore, $\text{c}$ and $\text{s}$ are shorthands of $\cos$ and $\sin$, respectively.
 
 \section{Quadrotor dynamics and control}
 
@@ -101,59 +101,54 @@ Furthremore, $\text{c}\cdot$ and $\text{s}\cdot$ are shorthands of $\cos\cdot$ a
 To describe the dynamic model of a multirotor, we define the inertial $O_I\{x_I,y_I,z_I\}$ and the multirotor body-fixed $O_b\{x_b,y_b,z_b\}$ frames. The body-fixed frame is located at the center of the multirotor. 
 The translational and angular dynamics of a multirotor is described as follows:
 \begin{align}
-\ddot{p} &= gz_I + Tz_b + F_d + \delta \label{eq:translational} \\
+\ddot{p} &= -gz_I + Tz_b + F_d + \delta \label{eq:translational} \\
 \dot{\textbf{q}} &= \textstyle{\frac{1}{2}}\textbf{q}\otimes \text{P}(\omega) \label{eq:rotational}
 \end{align}
 where $p$ is the position of $O_b$ with respect to $O_I$, and $\textbf{q} = [q_0\;\bar{q}^\top]^\top$ is the unit quaternion describing the orientation of $O_b$ with respect to $O_I$.
 The angular velocity of $O_b$ represented in $O_b$ is denoted as $\omega$.
 The terms $g$ and $T$ are gravitational constant and mass normalized collective thrust, respectively. 
 Without loss of generality, the axis $z_I$ is defined as $e_3 = [0\;0\;1]^\top$.
-%Also, the operator $\otimes$ represents quaternion multiplication and $\text{P}(\cdot)$ is the quaternion representation of a vector ${\omega} \in \text{so}(3)$ as $\text{P}({\omega}) = [0\;{\omega}^\top]^\top$. 
-The rotor drag applied on the multirotor is denoted as $F_d$, and it is explicitly expressed as follows:
+The rotor drag applied on the multirotor is denoted as $F_d$, and it is expressed as follows [IFAC]:
 \begin{equation}
 F_d = c_d\textbf{q}\odot\pi_z\textbf{q}^{-1}\odot \dot{p} \label{eq:rotorDrag}
 \end{equation}
-where $c_d$ is the rotor drag coefficient, $\pi_z = I_3 - e_3^\top e_3$ is the matrix projecting a vector onto the $x_by_b$ plane.
-%, and the operator $\odot$ denotes quaternion rotation such as $\textbf{q}\odot r = \textbf{q}\otimes\text{P}(r)\otimes\textbf{q}^{-1}$.
+where $c_d$ is the rotor drag coefficient, and $\pi_z = I_3 - e_3^\top e_3$ is the matrix projecting a vector onto the $x_by_b$ plane.
 The external forces and model uncertainties excluding the rotor drag term are lumped in $\delta \in \mathbb{R}^{3\times 1}$. 
 
-In eq. \eqref{eq:rotational}, angular velocity $\omega$ is used as the input term since the rotational velocity dynamics is fast enough. 
-%the rotational motion of a quadrotor is described with the kinematic relation. 
-It is possible based on the assumption that the multirotor body angular rate $\omega$ could be directly controlled with low-level controllers such as [DANDREA] or off-the-shelf flight controllers supporting angular rate control mode.
+In eq. \eqref{eq:rotational}, the angular velocity $\omega$ is used as the input term. 
+It is possible based on the assumption that the multirotor body angular rate $\omega$ could be directly controlled as also supposed in [DANDREA].
 Therefore, the input terms of the multirotor dynamics in eqs. \eqref{eq:translational} and \eqref{eq:rotational} are $T$ and $\omega$.
 \\
 \textbf{Uncertainty and disturbances}
-In the free flight scenario, rotor drag and fuselage drag could be considered as the biggest external disturbances.
-The rotor drag could be modeled as, and the fuselage drag could be blah blah.
-Non perfect input tracking, XXX
+In the free flight scenario which is not incorporating physical interaction with environment such as pushing or pulling, rotor and fuselage drag could be considered as the biggest external disturbances [DRAG].
+XXXXX
+Conclusion is that the rotor drag is not ignorable and proportional to the body velocity.
+Other disturbances are small and can be assumed to be bounded to certain values.
 
 \subsection{Multirotor control} \label{sec:controller}
-Let us assume that the reference trajectory of the differential flat output[MEL], which are $\{p(t)^r,\psi^r(t)\}$ and $\mathcal{C}^2$, are given.
-Here, $p^r(t)$ is the reference trajectory of the multirotor, and $\psi(t)$ represents the reference rotation of the multirotor about the $z_b$ body axis, i.e. yaw angle in the Euler attitude representation.
+Let us assume that the reference trajectory of the differential flat output[MEL] $\{p(t)^r,\psi^r(t)\}$ is given.
+Here, $p^r(t)$ is the reference trajectory of the multirotor, and $\psi^r(t)$ represents the reference rotation of the multirotor about the $z_b$ body axis, i.e. yaw angle in the Euler angle representation.
 
 To control the translational motion of a multirotor, we utilized a geometric control method [TYL] which is widely utilized in the researches on multirotors [RPG][UPENN][MIT].
 Let $e_p = p - p^r$ and $e_v = \dot{p} - \dot{p}^r$ be the position and velocity error terms.
 With the above definitions, the mass normalized thrust $T$ and desired thrust direction of a multirotor $z_b^d$ could be computed as the following procedure:
 \begin{align}
-\ddot{p}^{d} &= -K_p e_p - K_v e_v -ge_3 + \ddot{p}^r \label{eq:ddpd} \\
-%z_b^{d} &= \frac{\ddot{x}^{d}}{\|\ddot{x}^{d}\|} \nonumber \\
+\ddot{p}^{d} &= -K_p e_p - K_v e_v + ge_3 + \ddot{p}^r \label{eq:ddpd} \\
 z_b^{d} &= \ddot{p}^{d}/|\ddot{p}^{d}| \nonumber \\
 T &= \langle \ddot{p}^{d}, z_b \rangle = |\ddot{p}^{d}|\langle z_b^d, z_b \rangle \nonumber 
 \end{align}
 where $K_p$ and $K_v$ are gain matrices with positive diagonal entries.
 By substituting the terms $T$ and $\ddot{p}^d$ in \eqref{eq:translational}, the error dynamics of the translational motion could be derived as follows:
 \begin{align}
-%\dot{e}_p &= e_v \nonumber \\
-\ddot{e}_p &= ge_3 + Tz_b + F_d + \delta - \ddot{p}^r + \ddot{p}^d - \ddot{p}^d \nonumber \\
+\ddot{e}_p &= -ge_3 + Tz_b + F_d + \delta - \ddot{p}^r + \ddot{p}^d - \ddot{p}^d \nonumber \\
 &= -K_pe_p -K_ve_v + F_d + \delta + Tz_b - \ddot{p}^d \nonumber \\
 &= -K_pe_p -K_ve_v + F_d + \delta + |\ddot{p}^d|\{\langle z_b^d, z_b \rangle z_b - z_b^d\} \nonumber \\
 &= -K_pe_p -K_ve_v + F_d + \delta +  |\ddot{p}^d|\text{s}_\Phi u \label{eq:translationalError1}
 \end{align}
-%where $\text{s}_\Phi u$ is the term inside of the curly bracket with
 where $\Phi$ is the angle between the axes $z_b$ and $z_b^d$, and $u$ is the unit vector indicating the direction of the term inside of the curly bracket.
 
 Similarly, the rotational motion of a multirotor could be analyzed by combining it with a control law that generates the desired angular rate $\omega^d$. 
-First, we compute the desired attitude of the multirotor with $\psi(t)$ and $z_b^d$ as follows: [MEL]
+First, we compute the desired attitude of the multirotor with $\psi^r(t)$ and $z_b^d$ as follows: [MEL]
 \begin{align}
 \bar{y}_b &= [\begin{array}{ccc}-\text{s}_{\psi^r}&\text{c}_{\psi^r}&0\end{array}]^\top \nonumber \\
 x_b^d &= \text{S}(\bar{y}_b)z_b^d / |\text{S}(\bar{y}_b)z_b^d | \nonumber \\ 
@@ -171,17 +166,17 @@ The attitude error between $\textbf{q}^d$ and $\textbf{q}$ is denoted as $\textb
 \end{equation}
 where $\omega_d^d$ is the desired angular velocity of $\textbf{q}^d$ represented in $\textbf{q}^d$.
 According to [ETH], the attitude error $\textbf{q}_e$ is globally asymptotically stable equilibrium point. 
-Hence, it is possible to assume that the error $\Phi$ is also asymptotically stable, and bounded by a known value.
+Hence, it is possible to assume that the error $\Phi$ is also asymptotically stable, and bounded by a known value. NEEDS MORE EXPLANATIONS.
 \\
 \textbf{Assumption : }
 In this work, we assume that the norm of the external disturbance is bounded as $|\delta| \leq \bar{\delta}$. 
-Also, the norm of the nominal mass normalized collective thrust value is bounded as $|ge_3 + \ddot{p}^r| \leq \bar{T}$ given any $\mathcal{C}^2$ reference trajectory $x^r$.  
-Furthermore, the maximum thrust axis error is bounded such as $\text{s}_\Phi \leq \bar{\text{s}}_\Phi$.
+Also, the norm of the nominal collective thrust is bounded as $|ge_3 + \ddot{p}^r| \leq \bar{T}$ given any $\mathcal{C}^2$ reference trajectory $x^r$.  
+Furthermore, the norm of the thrust axis error is also bounded such as $|\text{s}_\Phi| \leq \bar{\text{s}}_\Phi$ with the attitude controller.
 
-\subsection{Stability analysis}
+\subsection{Stability analysis} \label{sec:stabilityAnalysis}
 In Sec. \ref{sec:controller}, it is assumed that the attitude error is bounded for all flight duration.
 In this subsection, we investigate the stability of the translational dynamics in eq. \eqref{eq:translationalError1}.  
-%could be considered as input-to-state stable by considering $\bar{T}$, $|\dot{p}^r|$, and $\delta$ as input terms. 
+
 As the first step, the dynamics system is summarized as follows: 
 \begin{equation}
 \begin{array}{l}
@@ -190,40 +185,36 @@ As the first step, the dynamics system is summarized as follows:
 \end{array} \label{eq:errorDynamics}
 \end{equation}
 To analyze the stability of the error dynamics conveniently, we assume that $K_p = k_pI_3$ and $K_v = k_vI_3$ with positive scalar gain values $k_p$ and $k_v$. 
-Then, we define the Lyapunov candidate function as $V=\frac{1}{2}e^\top P e$ where $e = [e_p^\top\;e_v^\top]^\top$ and
+Then, we define the Lyapunov candidate function as $\bar{V}=\frac{1}{2}e^\top \bar{P} e$ where $e = [e_p^\top\;e_v^\top]^\top$ and
 \begin{equation}
-P = \left[
+\bar{P} = \left[
 \begin{array}{rr}
 (k_p+k_d)I_3 & I_3 \\ I_3 & I_3
 \end{array}
 \right]. \nonumber
 \end{equation}
 The Lyapunov function is positive definite when $k_p + k_v > 1$.
-Furthermore, the directional derivative of $V$ can be summarized as follows:
+Furthermore, the directional derivative of $\bar{V}$ can be summarized as follows:
 \begin{align}
-\dot{V} &= -k_p e_p^\top e_p -k_v e_v^\top e_v + e_v^\top e_v \nonumber \\
+\dot{\bar{V}} &= -k_p e_p^\top e_p -k_v e_v^\top e_v + e_v^\top e_v \nonumber \\
 &\;\;\;\;+(e_p+e_v)^\top\{\delta + F_d + |\ddot{p}^d|\text{s}_\Phi u\}.
 \end{align}
-Then, by having $\ddot{p}^d$ in eq. \eqref{eq:ddpd}, $|\delta|\leq\bar{\delta}$, $|F_d| \leq c_d|\dot{p}^r+e_v|$, and $|\text{s}_\Phi u| < \bar{\text{s}}_\Phi$, we can rearrange the above relation further as
+Then, by having $\ddot{p}^d$ in eq. \eqref{eq:ddpd}, $|\delta|\leq\bar{\delta}$, $|F_d| \leq c_d|\dot{p}^r+e_v|$, and $|\text{s}_\Phi u| < \bar{\text{s}}_\Phi$, the above relation is rearranged further as
 \begin{align}
-\dot{V} &\leq -k_p|e_p|^2 -(k_v+1)|e_v|^2 +(|e_p| + |e_v|)\nonumber \\
+\dot{\bar{V}} &\leq -k_p|e_p|^2 -(k_v+1)|e_v|^2 +(|e_p| + |e_v|)\nonumber \\
 &\;\;\;\;\times\{\bar{\delta} + c_d|\dot{p}^r+e_v|+\bar{\text{s}}_\Phi(|-k_pe_p-k_ve_v|+\bar{T})\} \nonumber \\
-&\leq -\bar{e}^\top Q\bar{e} + \Delta|\bar{e}| \label{eq:dotV}
+&\leq -\bar{e}^\top \bar{Q}\bar{e} + \Delta|\bar{e}| \label{eq:dotV}
 \end{align} 
 where $\bar{e} = [|e_p|\;|e_v|]^\top$, $\Delta = \bar{\delta}+c_d|\dot{p}^r|+\bar{s}_\Phi\bar{T}$ and
 \begin{align}
-Q &= \left[
+\bar{Q} &= \left[
 \begin{array}{rr}
 k_p(1-\bar{s}_\Phi) & -\frac{1}{2}\{c_d+\bar{s}_\Phi(k_p+k_d)\} \\
 -\frac{1}{2}\{c_d+\bar{s}_\Phi(k_p+k_d)\} & k_v(1-\bar{s}_\Phi)-1-c_d
 \end{array}
 \right].\nonumber 
 \end{align}
-Here, the matrix $Q$ can be considered as the summation of the two separated parts such as
-\begin{equation}
-Q = Q_A + \bar{\text{s}}_\Phi Q_B \nonumber
-\end{equation}
-where
+Here, the matrix $\bar{Q}$ can be considered as the summation of the two separated parts such as $\bar{Q} = Q_A + \bar{\text{s}}_\Phi Q_B$ where
 \begin{align}
 Q_A &= \left[
 \begin{array}{rr}
@@ -237,151 +228,107 @@ Q_B &= \left[
 \right].
 \end{align}
 By setting $k_v > 1+c_d$ and $k_p > \frac{c_d^2}{4(k_v-1-c_d)}$, we can make the matrix $Q_A$ positive definite. 
-On the other hand, the matrix $Q_B$ cannot be positive definite since the determinant of $Q_B$ is $\text{det}(Q_B) = -\frac{1}{4}(k_p-k_v)^2 \leq 0$, i.e. $\lambda_{\max}(Q_B)\geq0$ and $\lambda_{\min}(Q_B)\leq 0$.
-However, even though $Q_B$ is not positive definite, we can assure that the matrix $Q$ is positive definite with the condition $\bar{\text{s}}_\Phi < -\lambda_{\min}(Q_A)/\lambda_{\min}(Q_B)$
+On the other hand, the matrix $Q_B$ cannot be positive definite since $\text{det}(Q_B) = -\frac{1}{4}(k_p-k_v)^2 \leq 0$, i.e. $\lambda_{\max}(Q_B)\geq0$ and $\lambda_{\min}(Q_B)\leq 0$.
+However, even though $Q_B$ is not positive definite, we can assure that the matrix $\bar{Q}$ is positive definite with the condition $\bar{\text{s}}_\Phi < -\lambda_{\min}(Q_A)/\lambda_{\min}(Q_B)$
 which could readly be achieved since $\bar{\text{s}}_\Phi \approx 0$ with a well designed attitude controller.
-Therefore, with the gain values $k_p$ and $k_v$ fulfilling $\lambda(Q) \geq 0$, eq. \eqref{eq:dotV} becomes
+Therefore, with the gain values $k_p$ and $k_v$ fulfilling $\lambda(\bar{Q}) \geq 0$, eq. \eqref{eq:dotV} becomes
 \begin{align}
-\dot{V} &\leq -\lambda_{\min}(Q)|\bar{e}|^2 + \Delta|\bar{e}| \nonumber \\
-&\leq -\lambda_{\min}(Q)(1-\theta)|\bar{e}|^2-\lambda_{\min}(Q)\theta|\bar{e}|^2 + \Delta|\bar{e}| \nonumber
-%&\leq -\lambda_{\min}(Q)(1-\theta)|\bar{e}|^2-\lambda_{\min}(Q)\theta|\bar{e}|^2 \nonumber \\
-%&\;\;\;\;+ (\bar{\delta}+c_d|\dot{p}^r|+\bar{s}_\Phi\bar{T})|\bar{e}| \nonumber
+\dot{V} &\leq -\lambda_{\min}(\bar{Q})|\bar{e}|^2 + \Delta|\bar{e}| \nonumber \\
+&\leq -\lambda_{\min}(\bar{Q})(1-\theta)|\bar{e}|^2-\lambda_{\min}(\bar{Q})\theta|\bar{e}|^2 + \Delta|\bar{e}| \nonumber
 \end{align}
-where $0<\theta<1$. 
-%Finally, 
-%\begin{equation}
-%\dot{V} \leq -\lambda_{\min}(Q)(1-\theta)|\bar{e}|^2,\;\;
-%\forall|\bar{e}| \geq 
-%\frac{\bar{\delta}+c_d|\dot{p}^r|+\bar{s}_\Phi\bar{T}}{\lambda_{\min}(Q)\theta}. \nonumber
-%\end{equation}
-%\begin{equation}
-%\dot{V} \leq -\lambda_{\min}(Q)(1-\theta)|\bar{e}|^2,\;\;\forall|\bar{e}| \geq L\left[
-%\begin{array}{ccc}
-%\bar{\delta}&|\dot{p}^r|&\bar{T}
-%\end{array}
-%\right]^\top
-%%\frac{|L|}{\lambda_{\min(Q)}(1-\theta)}. \nonumber
-%\end{equation}
-%where
-%\begin{equation}
-%L = \frac{1}{\lambda_{\min}(Q)(1-\theta)}\left[
-%\begin{array}{ccc}
-%1&c_d&\bar{\text{s}}_\Phi 
-%\end{array}
-%\right].
-%\end{equation}
+where $0<\theta<1$.
+Finally,
+\begin{equation}
+\dot{\bar{V}} \leq -\lambda_{\min}(\bar{Q})(1-\theta)|\bar{e}|^2, \text{ where } |\bar{e}| \geq \frac{\Delta}{\lambda_{\min}(\bar{Q})\theta}. \nonumber
+\end{equation}
 Therefore, the error dynamics of the translational system of a multirotor is uniformly ultimately bounded. Furthermore, the ultimate bound $b$ could be computed as 
 \begin{equation}
-b = \sqrt{\frac{\lambda_{\max}(P)}{\lambda_{\min}(P)}\mu^2},\;\;\;
-%\mu = \frac{\bar{\delta}+c_d|\dot{p}^r|+\bar{s}_\Phi\bar{T}}{\lambda_{\min}(Q)\theta}. 
-\mu = \frac{\Delta}{\lambda_{\min}(Q)\theta}. 
+b = \sqrt{\frac{\lambda_{\max}(\bar{P})}{\lambda_{\min}(\bar{P})}\mu^2},\;\;\;
+\mu = \frac{\Delta}{\lambda_{\min}(\bar{Q})\theta}. 
 \label{eq:expected}
 \end{equation}
-% of $\bar{\delta}$, $|\dot{p}^r|$, and $\bar{T}$. In other words, the norm of error is 
-%\begin{equation}
-%|e| < KL(|e_0|,t-t_0) + K(|[\bar{\delta},|\dot{p}^r|,\bar{T}]|) \nonumber
-%\end{equation}
-In this analysis, we could know that any error will eventually enter into the ultimate bound $|e| \leq b$ within finite time. 
-The ultimate bound is the function of $\Delta$ and it is the combination of $\bar{\delta}$, $|\dot{p}^r|$, and $\bar{\text{s}}_\Phi\bar{T}$. Also, the drag coefficient and the maximum attitude error could be interpreted as the weight terms. 
-Hence, the radius of the bound will get bigger by having larger disturbances, reference velocity, and reference acceleration ($\bar{T} = |ge_3 + \ddot{p}^r|$). 
+
+In this analysis, we can see that any error will eventually enter into the ultimate bound with radius $b$ within finite time. 
+The ultimate bound is the function of $\Delta$ and it is the combination of $\bar{\delta}$, $|\dot{p}^r|$, and $\bar{T}$. Also, the drag coefficient $c_d$ and the maximum attitude error $\bar{\text{s}}_\Phi$ could be interpreted as the weight terms. 
+Hence, the radius of the bound will get bigger by having larger values of disturbances, reference velocity, and reference acceleration ($\bar{T} = |ge_3 + \ddot{p}^r|$). 
+
 However, even though we could get the general sense on how the error will behave, 
 it is difficult to know the tight ultimate bound that the error states actually resides. 
-Also, given initial set of error states, it is hard to see how the error evolve before getting into the ultimate bound.
-
-%Keeps converging to the region bound set by the norm of input terms.
-%Also, the norm of $L$ is a monotonic function of $c_d$ and $\bar{\text{s}}_\Phi$. 
-%%By increasing the attitude error, the norm of $L$ will get larger. 
-%%In the same manner, the bigger drag coefficient $c_d$ will grow the norm of $L$.
-%Accordingly, the error $|e|$ will be bounded by larger bound with larger values of $\bar{\text{s}}_\Phi$ and $c_d$. 
-%%It implies that the trajectory tracking performance will get better by having small drag coefficient and good attitude tracking performance.
-%%Finally, the norm of the error $|e|$ will enter the ball with radius $\gamma$ which is $\gamma = \frac{\lambda_{\max}(P)}{\lambda_{\min}(P)}|L|\;|[\bar{\delta}\;\;\bar{T}]|$ [KHALIL].
-%%\begin{equation}
-%%\gamma = \frac{\lambda_{\max}(P)}{\lambda_{\min}(P)}|L|\;|[\bar{\delta}\;\;\bar{T}]|. \nonumber
-%%\end{equation}
+Also, given initial set of error states, it is hard to see how the error will evolve before getting into the ultimate bound.
 
 \section{Computing funnels}
-%Heretofore, the stability of the translational motion of a multirotor has been analyzed. 
-%The error $|e|$ will be bounded and the radius of the bound is determined by the norm of disturbance, the norm of the nominal thrust, and the reference velocity. 
-%Even though we know how the error would behave and the radius of bound in conservative manner, we cannot find the tight bound of the error state with the above analysis. 
-In Sec. \ref{sec:stability}, we checked the general behaviour of the translational error dynamic system in conservative manner.
-However, with the funnel analysis with sum of squares optimization tools, we can find the realistic outermost bound on the state $e$.
-The concept of funnel and numerical method for computing funnel are mainly adopted from [MAJ]. 
-\subsection{Funnel?}
-Funnel $\mathcal{F}(t) \subset \mathbb{R}^{6\times 1}$  represents the reachable set of error $e(t)\in \mathbb{R}^{6\times 1}$ given the initial set of error $e(t_0) \in \xi_0$ and a closed-loop dynamic equation.
-In other words, the error $e(t_0)$ contained in the set $\xi_0$ will evolve only inside of the set $\mathcal{F}(t)$ for all time.
+In Sec. \ref{sec:stabilityAnalysis}, we checked the general behavior of the translational error dynamic system via classical Lyapunov stability analysis.
+Furthermore, with sum of squares optimization tools, we can compute the reachable set of the state $e$.
+The concept of funnel and numerical method for computing funnel can be referred to [MAJ1,MAJ2]. 
+
+\subsection{Concept of funnel}
+Funnel $\mathcal{F}(t) \subset \mathbb{R}^{6\times 1}$  represents the reachable set of error $e(t)\in \mathbb{R}^{6\times 1}$ given the initial set of error $e(0) \in \xi_0$ and a closed-loop dynamic equation.
+In other words, the error $e(0)$ contained in the set $\xi_0$ will evolve only inside of the set $\mathcal{F}(t)$ for $t\geq 0$.
 These property of the funnel could be written as follows:
 \begin{equation}
-e(t_0) \in \xi_0,\;\xi_0 \subset \mathcal{F}(0)\;\Rightarrow\; e(t) \in \mathcal{F}(t),\;\;\forall t \geq t_0. \label{eq:funnel1}
+e(0) \in \xi_0,\;\xi_0 \subset \mathcal{F}(0)\;\Rightarrow\; e(t) \in \mathcal{F}(t),\;\;\forall t \geq 0. \label{eq:funnel1}
 \end{equation}
-%Since the error $e(t_0)$ contained in the set $\xi_0$ will evolve inside of the set $\mathcal{F}(t)$ for alll time, the set $\mathcal{F}(t)$ can be considered as a funnel.
 
-Define a time varying positive definite matrix $P_\mathcal{F}(t) \in \mathbb{R}^{6\times 6}$, a positive parameter $\alpha(t) \in \mathbb{R}$, and $V_\mathcal{F}(t,e) = e(t)^\top P_\mathcal{F}(t) e(t)$.
-In the following analysis, $V_\mathcal{F}(t,e)$ will be a Lyapunov function, and $\alpha(t)$ will be the parameter indicating the level of $V_\mathcal{F}(t,e)$.
-Then, define a set $\mathcal{F}(t)$ as 
+Define a time varying positive definite matrix $P(t) \in \mathbb{R}^{6\times 6}$, a positive scalar variable $\alpha(t)$, and $V(t,e) = e(t)^\top P(t) e(t)$.
+In the following analysis, $V(t,e)$ will be the Lyapunov function, and $\alpha(t)$ will be the parameter indicating the level of $V(t,e)$.
+Then, we represent the set $\mathcal{F}(t)$ as 
 \begin{equation}
-\mathcal{F}(t) = \{e(t) \in \mathbb{R}^{6\times 1} | V_\mathcal{F}(t,e) \leq \alpha(t)\} \label{eq:funnel2}
+\mathcal{F}(t) = \{e(t) \in \mathbb{R}^{6\times 1} | V(t,e) \leq \alpha(t)\} \label{eq:funnel2}
 \end{equation}
-%Here, for $\hat{e}(t) = \{e|V_\mathcal{F}(t,e) = \alpha(t),\;t\in[t_0,t_f]\}$, let us assume that $V_\mathcal{F}$ and $\alpha$ are constrained such as
-%\begin{equation}
-%\dot{V}_\mathcal{F}(t,e) < \dot{\alpha}(t)\text{ and }V_\mathcal{F}(t,e) = \alpha(t). \label{eq:funnel3}
-%\end{equation}
-with $V_\mathcal{F}$ and $\alpha$ constrained such that
+where $V$ and $\alpha$ are constrained such that
 \begin{align}
-&\dot{V}_\mathcal{F}(t,\hat{e}) < \dot{\alpha}(t), \label{eq:funnel3} \\
-&\text{for }\;\;\;\hat{e}(t) = \{e(t)|V_\mathcal{F}(t,e) = \alpha(t),\;t\in[t_0,t_f]\}. \nonumber
+&\dot{V}(t,\hat{e}) < \dot{\alpha}(t) \label{eq:funnel3} \\
+&\text{for }\;\;\;\hat{e}(t) = \{e(t)|V(t,e) = \alpha(t),\;t\in[0,\infty)\}. \nonumber
 \end{align}
-%In eq. \eqref{eq:forConstraint}, it is shown that the terms $V_\mathcal{F}$ and $\alpha$ exist.
-From the constraint, it is obvious that the state $e(t) \in \mathcal{F}(t)$ cannot escape the sublevel set described by $V_\mathcal{F}(t,e) \leq \alpha(t)$.
+From the constraint, it is obvious that the state $e(t) \in \mathcal{F}(t)$ cannot escape the sublevel set described by $V(t,e) \leq \alpha(t)$.
 Therefore, the set $\mathcal{F}(t)$ defined in eqs. \eqref{eq:funnel2} and \eqref{eq:funnel3}
  complies with the definition of funnel in eq. \eqref{eq:funnel1} [MAJ]. 
 
-Another constraint to fulfill the property of funnel defined in eq. \eqref{eq:funnel1} is related on the initial condition of a funnel. 
-At $t = t_0$, the initial set of $e$, i.e. $\xi_0$, should be the subset of $\mathcal{F}(t_0)$. 
-%so that we can see how all the error state in $e(t_0) \in \xi_0$ progress as time goes on. 
-To satisfy the constraint, we define $\xi_0 = \{e \in \mathbb{R}^{6\times1}|e^\top R e \leq 1\}$ with a positive definite matrix $R$. Then, the constraint can be written as follows:
+Another constraint to fulfill the property of funnel defined in eq. \eqref{eq:funnel1} is related to the initial condition of a funnel. 
+The initial set of $e(0)$, i.e. $\xi_0$, should be the subset of $\mathcal{F}(0)$. 
+To enforce the constraint, we define $\xi_0 = \{e|e^\top R e \leq 1\}$ with a positive definite matrix $R$. Then, the constraint can be written as follows:
 \begin{equation}
-V_\mathcal{F}(t_0,\hat{e}) \leq \alpha(t_0),\;\;\text{for}\;\;\hat{e} = \{e |e^\top R e \leq 1\}.
+V(0,\hat{e}) \leq \alpha(0)\;\text{ for }\;\hat{e} = \{e |e^\top R e \leq 1\}.
 \end{equation} 
 
-Furthermore, we want to find $V_\mathcal{F}$ and $\alpha$ that represent the tight outer bound of $e$. 
-Since $P_\mathcal{F}$ is a positive definite matrix and $V_\mathcal{F}$ is a quadratic function of $e$, 
-it is possible to define a ellipsoid that enclosing the level set defined as $V_\mathcal{F}(t,e) = \alpha(t)$.
-Then, by minimizing the size of the outer shell, the size of the funnel could be minimized consequently.
+Furthermore, we want to find $V$ and $\alpha$ that represent the reachable set of $e$ small to make the funnel as less consertative as possible. 
+Since $P$ is a positive definite matrix and $V$ is a quadratic function of $e$, 
+it is possible to define an ellipsoid that enclosing the set of error $e=\{e|V(e,t) = \alpha(t) \}$.
+Then, by minimizing the volume of the enclosing ellipsoid, the size of the funnel could be minimized consequently.
 The outer ellipsoid can be formulated such as
 \begin{align}
-&\hat{e}^\top(t) S(t) \hat{e}(t) \leq 1,  \nonumber \\
+&\hat{e}^\top(t) S(t) \hat{e}(t) \leq 1  \nonumber \\
 &\text{ for }\;\;\;\hat{e}(t) = \{e(t)|V_\mathcal{F}(t,e) = \alpha(t),\;t \in [t_0,t_f]\}. \nonumber
 \end{align}
-where $S(t)\in \mathbb{R}^{6\times 6}$ is the positive definite matrix representing the shape of the outer shell. Note that the volume of the ellipsoid is proportional to the determinant of $S(t)$.
+where $S(t)\in \mathbb{R}^{6\times 6}$ is the positive definite matrix representing the shape of the outer shell ellipsoid. Note that the volume of the ellipsoid is proportional to the determinant of $S(t)$.
 
-Based on these observations, we can formulate the optimization problem to find the tight funnel surrounding the states $e(t)$ as follows:
+Based on these observations, we can formulate the optimization problem to find the funnel as follows:
 \begin{equation}
 \begin{array}{rl}
-\displaystyle{\inf_{P_\mathcal{F},\alpha,S}} & \int_{t_0}^{t_f} \det{S(t)}\text{d}t \label{eq:optim1} \\
-\displaystyle{\text{s.t.}}& \dot{V}_\mathcal{F}(t,\hat{e}) < \dot{\alpha}(t)\text{ for }\hat{e} = \{e(t)|V_\mathcal{F}(t,e) = \alpha(t)\}, \nonumber \\
-& \hat{e}^\top S(t) \hat{e} \leq 1\text{ for }\hat{e} = \{e(t)|V_\mathcal{F}(t,e) = \alpha(t)\}, \nonumber \\
-%& \xi_0 \subset \mathcal{F}(0,e).
-& V_\mathcal{F}(t_0,\hat{e}) \leq \alpha(t_0)\text{ for }\hat{e} = \{e|e^\top R e \leq 1\}. \nonumber
+\displaystyle{\inf_{P,\alpha,S}} & \int_{t_0}^{t_f} \det{S(t)}\text{d}t \label{eq:optim1} \\
+\displaystyle{\text{s.t.}}& \dot{V}(t,\hat{e}) < \dot{\alpha}(t)\text{ for }\hat{e} = \{e(t)|V(t,e) = \alpha(t)\}, \nonumber \\
+& \hat{e}^\top S(t) \hat{e} \leq 1\text{ for }\hat{e} = \{e(t)|V(t,e) = \alpha(t)\}, \nonumber \\
+& V(t_0,\hat{e}) \leq \alpha(t_0)\text{ for }\hat{e} = \{e|e^\top R e \leq 1\}. \nonumber
 \end{array}
 \end{equation}
 
-\subsection{Computing funnel}
-We compute the funnels for the multirotor translational error dynamic system.
+\subsection{Computing funnel} \label{sec:computeFunnels}
+We compute the funnel for the multirotor translational error dynamic system.
 First of all, 
-we define the Lyapunov function in the quadratic form such as $V_\mathcal{F} = e(t)^\top P_\mathcal{F} e(t)$ with the time varying positive definite matrix
+we define the Lyapunov function in the quadratic form such as $V = e(t)^\top P(t) e(t)$ with the time varying positive definite matrix
 \begin{equation}
-P_\mathcal{F}(t) = \left[
+P(t) = \left[
 \begin{array}{cc}
 P_p(t) & P_{pv}(t) \\
 P_{pv}(t) & P_v(t)
 \end{array}
-\right] \nonumber
+\right] \label{eq:funnelP}
 \end{equation}
 where $P_p(t)$, $P_{pv}(t)$, and $P_v(t)$ are diagonal matrices with positive entries.
-Then, with eq. \eqref{eq:errorDynamics}, the directional derivative of the Lyapunov function $V_\mathcal{F}$ is rearranged as follows: 
+Then, with eq. \eqref{eq:errorDynamics}, the directional derivative of the Lyapunov function $V$ is rearranged as follows: 
 \begin{align}
-\dot{V}_\mathcal{F} &= -e^\top ( A^\top P_\mathcal{F} + P_\mathcal{F}A) e + e^\top \dot{P}_\mathcal{F}e \nonumber \\
-&\;\;\;\;+2e^\top P_\mathcal{F} B(\delta+\text{s}_\Phi|\ddot{p}^d|{u}+F_d) \nonumber
+\dot{V} &= -e^\top ( A^\top P + PA) e + e^\top \dot{P}e \nonumber \\
+&\;\;\;\;+2e^\top P B(\delta+\text{s}_\Phi|\ddot{p}^d|{u}+F_d) \nonumber
 \end{align}
 where
 \begin{equation}
@@ -397,48 +344,56 @@ A = \left[
 \end{equation}
 In the right hand side of the above equation, the third term further developed as
 \begin{align}
-&e^\top P_\mathcal{F} B(\delta+\text{s}_\Phi|-K_p e_p -K_v e_v + ge_3 + \ddot{p}^r|\bar{u}+F_d) \nonumber \\
-&\leq |e^\top P_\mathcal{F}B|\{\bar{\delta} + \bar{\text{s}}_\Phi(k_p|e_p| + k_v|e_v| + \bar{T})+c_d|\dot{p}^r+e_v|\} \nonumber \\
-%&\leq (p_{pv}|e_p|+p_v|e_v|) \label{eq:normAnalysis} \\
-%&\;\;\;\;\times \{\bar{\delta}+\bar{\text{s}}_\Phi(k_p|e_p|+k_v|e_v|+\bar{T})+c_d(|\dot{p}^r|+|e_v|)\} \nonumber
-&\leq (p_{pv}|e_p|+p_v|e_v|)\{\bar{\text{s}}_\Phi(k_p|e_p|+k_v|e_v|)+c_d|e_v|+\Delta\} \label{eq:normAnalysis}
+&e^\top P B(\delta+\text{s}_\Phi|-K_p e_p -K_v e_v + ge_3 + \ddot{p}^r|\bar{u}+F_d) \nonumber \\
+&\leq |e^\top P B|\{\bar{\delta} + \bar{\text{s}}_\Phi(k_p|e_p| + k_v|e_v| + \bar{T})+c_d|\dot{p}^r+e_v|\} \nonumber \\
+&\leq (p_{pv}|e_p|+p_v|e_v|)\{\bar{\text{s}}_\Phi(k_p|e_p|+k_v|e_v|)+c_d|e_v|+\Delta\}\label{eq:deltaConst}
 \end{align}
 where $p_{pv}$, $p_v$, $k_p$, and $k_v$ are maximum eigenvalues of $P_{pv}$, $P_v$, $K_p$, and $K_v$.
 Also, $\Delta = \bar{\delta}+c_d|\dot{p}^r| + \bar{\text{s}}_\Phi\bar{T}$.
-To handle the error states with the norm $|e_p|$ and $|e_v|$ in eq. \eqref{eq:normAnalysis}, we define two variables $\bar{e}_p\in\mathbb{R}$ and $\bar{e}_v\in\mathbb{R}$ with the following constraints:
-%to substitute the terms $|e_p|$ and $|e_v|$ in eq. \eqref{eq:normAnalysis} with the following constraints:
+To handle the error states with the norm, i.e. $|e_p|$ and $|e_v|$, we define two variables $\bar{e}_p\in\mathbb{R}$ and $\bar{e}_v\in\mathbb{R}$ satisfying the following constraints:
 \begin{equation}
 \begin{array}{ll}
 \bar{e}_p^2 = e_p^\top e_p = |e_p|^2, & \bar{e}_p \geq 0 \\
 \bar{e}_v^2 = e_v^\top e_v = |e_v|^2, & \bar{e}_v \geq 0. \\
 \end{array} \nonumber 
 \end{equation} 
-Then, $\dot{V}_\mathcal{F}$ is further developed as follows:
-%\begin{align}
-%\dot{V}_\mathcal{F} &= -e^\top( P_\mathcal{F}A + A^\top P_\mathcal{F}) e + e^\top \dot{P}_\mathcal{F}e +2(p_{pv}\bar{e}_p+p_v\bar{e}_v) \nonumber \\
-% &\;\;\;\times\{\bar{\delta} + \bar{\text{s}}_\Phi(k_p\bar{e}_p+k_v\bar{e}_v + \bar{T})+c_d(|\dot{p}^r|+\bar{e}_v)\} \nonumber \\
-%&= -e^\top( P_\mathcal{F}A + A^\top P_\mathcal{F}) e + e^\top \dot{P}_\mathcal{F}e  \label{eq:aaa}\\
-% &\;\;\;\;+2(p_{pv}\bar{e}_p+p_v\bar{e}_v)\{\bar{\text{s}}_\Phi(k_p\bar{e}_p+k_v\bar{e}_v) + c_d\bar{e}_v + \Delta\}\nonumber 
-%\end{align}
+Then, $\dot{V}$ is further developed as follows:
 \begin{align}
-\dot{V}_\mathcal{F} &\leq -e^\top( P_\mathcal{F}A + A^\top P_\mathcal{F}) e + e^\top \dot{P}_\mathcal{F}e  \label{eq:aaa}\\
+\dot{V} &\leq -e^\top( PA + A^\top P) e + e^\top \dot{P}e  \label{eq:aaa}\\
  &\;\;\;\;+2(p_{pv}\bar{e}_p+p_v\bar{e}_v)\{\bar{\text{s}}_\Phi(k_p\bar{e}_p+k_v\bar{e}_v) + c_d\bar{e}_v + \Delta\}. \nonumber 
 \end{align}
 
-In terms $V_\mathcal{F}$ and $\dot{V}_\mathcal{F}$, the variables of the optimization problem are continuous in $t$. 
-However, to make the optimization problem easier to solve, 
-we discretized the variables $P_\mathcal{F}$, $\alpha$, and $S$. 
+In $V$ and $\dot{V}$, the variables of the optimization problem are continuous in $t$. 
+To solve the problem in more efficient manner, 
+we discretized variables $P$, $\alpha$, and $S$ in $t$.
+The discretized time is denoted as $t_n\;(n=0,\cdots,N)$. 
 Then, the optimization problem can be reformulated as the following:
+\begin{figure*}[t]
+\begin{subfigure}[b]{0.5\textwidth}
+\centering
+\includegraphics[width=8.5cm]{s2b_ver3.pdf}
+\caption{Funnels computed with the initial region with $\xi^s$.}
+\end{subfigure}
+\begin{subfigure}[b]{0.5\textwidth}
+\centering
+\includegraphics[width=8.5cm]{b2s_ver3.pdf}
+\caption{Funnels computed with the initial region with $\xi^b$.}
+\end{subfigure}
+\caption{
+Funnels computed with various values of $\Delta_k$ and $\xi_0$. The detailed parameters and settings are available in table. \ref{table:settings}. The black solid and dotted lines are with $\Delta_l = 0.5$ and $1.0$, the blue solid and dotted lines are with $\Delta_l = 1.5$ and $2.0$, and the green solid and dotted lines are $\Delta_l = 2.5$ and $3.0$.}
+\label{fig:funnelSamples}
+\end{figure*}
+
 \begin{align}
 &
 \begin{array}{rl}
-\displaystyle{\inf_{P_\mathcal{F}(n),\alpha(n),S(n),p_{pv}(n),p_v(n)}} & \displaystyle{\sum_{n=0}^{N}} \det(S(n))  \\
+\displaystyle{\inf_{P(t_n),\alpha(t_n),S(t_n),p_{pv}(t_n),p_v(t_n)}} & \displaystyle{\sum_{n=0}^{N}} \det(S(t_n))  \\
 \end{array} \label{eq:optim2} \\
 &
 \begin{array}{rl}
-\displaystyle{\text{s.t.}}& \dot{\alpha}(n) - \dot{V}_\mathcal{F}(n) \geq 0\text{ with constraints $c_1$ to $c_9$},  \\
-& 1-e^\top S(n) e \geq 0\text{ with constraints $c_9$ and $c_{10}$}, \nonumber \\
-& \alpha(0) - V_\mathcal{F}(0) \geq 0\text{ with constraint $c_{11}$}. \nonumber
+\displaystyle{\text{s.t.}}& \dot{\alpha}(t_n) - \dot{V}(t_n) \geq 0\text{ with constraints $c_1$ to $c_9$},  \\
+& 1-e^\top S(t_n) e \geq 0\text{ with constraints $c_9$ and $c_{10}$}, \nonumber \\
+& \alpha(t_0) - V(t_0) \geq 0\text{ with constraint $c_{11}$}. \nonumber
 \end{array} \nonumber 
 \end{align}
 where
@@ -446,60 +401,44 @@ where
 \begin{array}{rlrl}
 c_1:& \bar{e}_p^2 = e_p^Te_p,           & c_2:&\bar{e}_p \geq 0 \\
 c_3:& \bar{e}_v^2 = e_v^Te_v,           & c_4:&\bar{e}_v \geq 0 \\
-c_5:& p_{pv}(n)I_3 \geq P_{pv}(n),      & c_6:&p_{pv}(n)I_3 \geq -P_{pv}(n) \\
-c_7:& p_{ v}(n)I_3 \geq P_{ v}(n),      & c_8:&p_{ v}(n)I_3 \geq -P_{ v}(n) \\
-c_9:& \alpha(n) - V_\mathcal{F}(n) = 0, & c_{10}:&S(n) > 0 \\
+c_5:& p_{pv}(t_n)I_3 \geq P_{pv}(t_n),      & c_6:&p_{pv}(t_n)I_3 \geq -P_{pv}(t_n) \\
+c_7:& p_{ v}(t_n)I_3 \geq P_{ v}(t_n),      & c_8:&p_{ v}(t_n)I_3 \geq -P_{ v}(t_n) \\
+c_9:& \alpha(t_n) - V(t_n) = 0, & c_{10}:&S(t_n) > 0 \\
 c_{11}:& 1-e^\top R e = 0. &&
 \end{array} \nonumber
 \end{equation}
 The constraints $c_5$ to $c_8$ is added to ensure
-% $p_{pv}(n) \geq \lambda_{\max}(P_{pv}(n))$ and $p_v(n) \geq \lambda_{\max}(P_v(n))$ 
- $p_{pv}(n) \geq \|P_{pv}(n)\|$ and $p_v(n) \geq \|P_v(n)\|$ 
-with diagonal matrices $P_{pv}(n)$ and $P_v(n)$.
-In addition, $\dot{P}_\mathcal{F}(n)$ and $\dot{\alpha}(n)$ could be implemented as
+ $p_{pv}(t_n) \geq \|P_{pv}(t_n)\|$ and $p_v(t_n) \geq \|P_v(t_n)\|$ 
+with diagonal matrices $P_{pv}(t_n)$ and $P_v(t_n)$.
+In addition, $\dot{P}(t_n)$ and $\dot{\alpha}(t_n)$ could be implemented as
 \begin{equation}
 \begin{array}{cc}
-\dot{P}_\mathcal{F}(n) = \frac{P_\mathcal{F}(n+1) - P_\mathcal{F}(n)}{\text{d}t}, & \dot{\alpha}(n) = \frac{\alpha(n+1)-\alpha(n)}{\text{d}t}. 
-\end{array} \nonumber
+\dot{P}(t_n) = \frac{P(t_{n+1}) - P(t_n)}{\text{d}t}, & \dot{\alpha}(t_n) = \frac{\alpha(t_{n+1})-\alpha(t_n)}{\text{d}t}. 
+\end{array} \label{eq:dt}
 \end{equation}
-The optimization problem in eq. \eqref{eq:optim2} could be transformed into the form of sum-of-squares problem and solved efficiently by referring [MAJ].
-\begin{figure*}[t]
-\begin{subfigure}[b]{0.5\textwidth}
-\centering
-\includegraphics[width=7.0cm]{smaller.pdf}
-\caption{Funnels computed with the initial region with $\xi^s$.}
-\end{subfigure}
-\begin{subfigure}[b]{0.5\textwidth}
-\centering
-\includegraphics[width=7.0cm]{bigger.pdf}
-\caption{Funnels computed with the initial region with $\xi^b$.}
-\end{subfigure}
-\caption{
-Funnels computed with various values of $\Delta_k$ and $\xi_0$. The detailed parameters and settings are available in table. \ref{table:settings}. }
-\label{fig:funnelSamples}
-\end{figure*}
+The optimization problem in eq. \eqref{eq:optim2} could be transformed into the form of sum of squares problem and solved efficiently by referring [MAJ].
 
 \subsection{Funnel library}
 In the optimization problem, the list of parameters are~: the initial set of error states $\xi_0$; 
 the gain matrices $K_p$ and $K_d$; 
 the norm of maximum attitude angle error $\bar{\text{s}}_\Phi$;
-the rotor drag coefficient $c_d$; and the lumped disturbance term $\Delta$. 
+the rotor drag coefficient $c_d$; and the lumped disturbance term $\delta$. 
 Among these parameters, the gain matrices are manually set by an operator to satisfy the required flight performance in accordance with applications. 
-The attitude error $\bar{\text{s}}_\Phi$ and drag coefficient $c_d$ terms should be seleceted to be comparable with respect to the actual values.
+The attitude error $\bar{\text{s}}_\Phi$ and drag coefficient $c_d$ terms should be seleceted to be comparable with respect to the actual values of the multirotor.
 Accordingly, the terms $K_p$, $K_d$, $c_d$, and $\bar{\text{s}}_\Phi$ can be set with the current setting of the multirotor.
 However, the lumped disturbance term $\Delta(=\bar{\delta}+c_d|\dot{p}^r|+\bar{\text{s}}_\Phi|ge_3 + \ddot{p}^r|)$ keeps changing while a multirotor is in flight. 
 For example, the external disturbance, e.g. wind condition, could be different location to location.
-Also, the reference velocity $\dot{p}^r$ and accelerations $\ddot{p}^r$ are the functions of the reference trajectory so that the terms $|\dot{p}^r|$ and $|ge_3+\ddot{p}^r|$ will change while the multirotor in maneuver.
+Also, the reference velocity $\dot{p}^r$ and accelerations $\ddot{p}^r$ are derived from the reference trajectory so that the terms $|\dot{p}^r|$ and $|ge_3+\ddot{p}^r|$ will change while the multirotor is in maneuver.
 According to the stability analysis in eq. \eqref{eq:expected}, 
 the radius of the ultimate bound varies proportionally with $\Delta$, 
 and the behavior of the error states will also be altered with respect to $\Delta$. 
-Therefore, we evaluate \textit{library of funnel} with various values of $\Delta$, which will be denoted as $\Delta_l$ with $l(=1,\cdots,L)$, and use them depending on the flight condition.
-For example, if the external force $\delta$ is available apriori, 
-the terms $|\dot{p}^r|$ and $|ge_3 + \ddot{p}^r|$ are directly computable with the reference trajectory. 
-Therefore, we can guess the $\Delta$ along the reference trajectory and look up the library of funnel to compute how the error state will behave.
+Therefore, we generate \textit{library of funnels} with various values of $\Delta$, which will be denoted as $\Delta_l$ with $l(=1,\cdots,L)$ to use them depending on the magnitude of $|\Delta|$.
+%For example, if the external force $\delta$ is available apriori, 
+%the terms $|\dot{p}^r|$ and $|ge_3 + \ddot{p}^r|$ are directly computable with the reference trajectory. 
+%Therefore, we can guess the $\Delta$ along the reference trajectory and look up the library of funnel to compute how the error state will behave.
 
-Let $\mathcal{B}_{\Delta_l}$ be the ultimate bound of the error dynamics when the norm of disturbance is $\Delta_l$.
-For each $\Delta_l$, we evaluate the funnel with two different settings of initial sets such that $\mathcal{B}_{\Delta_l}\subset\xi_b$ and $\xi_s\subset\mathcal{B}_{\Delta_l}$.
+Let $U_{\Delta_l}$ represent the set of ultimate bound when the norm of disturbance is $\Delta_l$.
+For each $\Delta_l$, we evaluate the funnel with two different settings of initial sets such that $U_{\Delta_l}\subset\xi_b$ and $\xi_s\subset U_{\Delta_l}$.
 By doing this, we can see how the error states behave until they reach their ultimate bound from both smaller and larger regions.
 
 \begin{table}[b]
@@ -507,54 +446,49 @@ By doing this, we can see how the error states behave until they reach their ult
 \begin{tabular}{|r|l||r|l|} 
 \hline
 param & value & param & value \\ \hline \hline
-$\text{d}t$ & 0.05 [s] & $N$ & 120 \\ \hline
+$\text{d}t$ & 0.05 [s] & $N$ & 100 \\ \hline
 $K_{p,x}$ & 10 [s$^\text{-2}$] & $K_{v,x}$ & 4 [s$^\text{-1}$] \\ \hline
 $K_{p,y}$ & 10 [s$^\text{-2}$] & $K_{v,y}$ & 4 [s$^\text{-1}$] \\ \hline
 $K_{p,z}$ & 15 [s$^\text{-2}$] & $K_{v,z}$ & 6 [s$^\text{-1}$] \\ \hline
-\multirow{2}{*}{$\bar{\text{s}}_\Phi$} & 0.035 [$\cdot$] & \multirow{2}{*}{$R^b\;(\xi^b)$} & diag([1.0 1.0 1.0 0.1 0.1 0.1]) \\ 
-& $\approx\sin2^\circ$ & & \;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\; [$m^\text{-2}$, $m^\text{-2}s^\text{2}$] \\ \hline
-$c_d$ & 0.31 [$s^\text{-1}$]                         & $R^s\;(\xi^s)$ & diag([39 39 39 1.6 1.6 1.6]) \\ \hline
+\multirow{2}{*}{$\bar{\text{s}}_\Phi$} & 0.0532[$\cdot$] & \multirow{2}{*}{$R_b\;(\xi_b)$} & blockdiag($1.56I_3,0.11I_3$) \\ 
+& $\approx\sin3^\circ$ & & \;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\; [$m^\text{-2}$, $m^\text{-2}s^\text{2}$] \\ \hline
+$c_d$ & 0.32 [$s^\text{-1}$]                         & $R_s\;(\xi_s)$ & blockdiag($100I_3,11.1I_3$) \\ \hline
 \end{tabular}
 \caption{parameters used for computing funnel library} \label{table:settings} 
 \end{center}
 \end{table}
 
-The funnel library is computed with different settings of $\Delta_l$ with $l(=1,\cdots,l_{M})$ and initial conditions $\xi_0$ with $j=\{b,s\}$ indicating the subscript of $\xi_b$ and $\xi_s$.
-Then, a funnel could be denoted as $F_{\Delta_l}^j(i)$ where $i(=1,\cdots,i_{M})$ is the sequence number of funnel generated with the setting $\Delta_l$ and $j$.
-In summary, a library of funnel is organized as the set such as $\mathcal{F} = \{F_{\Delta_1},\cdots,F_{\Delta_L}\}$.
-Each element is the funnel $F_{\Delta_l}$ evaluated with different value of disturbance $\Delta_l$, 
-and it is constructed with funnels two different set of initial conditions as $F_{\Delta_l} = \{F_{\Delta_l}^b,F_{\Delta_l}^s\}$. The elements are the sequence of compact sets such as $F_{\Delta_l}^j = \{F_{\Delta}^j(1),\cdots,F_{\Delta}^j(i_{M})\}$.
-Also, as the definition of the funnel, the discretized funnel can be denoted as follows:
+In summary, a funnel library is organized as the set such as ${F}_{\text{lib}} = \{F_{\Delta_1},\cdots,F_{\Delta_{l_M}}\}$.
+Each element is evaluated with different value of disturbance $\Delta_l$, 
+and it is constructed with funnels two different set of initial conditions as $F_{\Delta_l} = \{F_{\Delta_l}^b,F_{\Delta_l}^s\}$ where the superscript $j \in \{b,s\}$ indicates the initial condition $\{\xi_b,\xi_s\}$. The elements are the sequence of compact sets such as $F_{\Delta_l}^j = \{F_{\Delta}^j(t_0),\cdots,F_{\Delta}^j(t_N)\}$ where
 \begin{equation}
-F_{\Delta_l}^j(i) = \{e| e^\top P_{\Delta_l}^j(i) e \leq  \alpha_{\Delta_l}^j(i)\} \label{eq:discreteFunnel}
+F_{\Delta_l}^j(t_n) = \{e| e^\top P_{\Delta_l}^j(t_n) e \leq  \alpha_{\Delta_l}^j(t_n)\}. \label{eq:discreteFunnel}
 \end{equation}
-where $P_{\Delta_l}^j(i)$ and $\alpha_{\Delta_l}^j(i)$ are the parameters optimized in the funnel generation.
+Here, $P_{\Delta_l}^j(t_n)$ and $\alpha_{\Delta_l}^j(t_n)$ are the parameters of the Lyapunov function eq. \eqref{eq:aaa} optimized in the funnel generation.
+Then, a piece of funnel in the library is quoted as $F_{\Delta_l}^j(i)$ where $i$ indicates the sequence number, i.e. $t_n$, of funnel generated with the setting $\Delta_l$ and $j$.
 
 As an example, we have generated funnels with the setting in table \ref{table:settings}.
-Funnels are optimized with the $\Delta_l$ for every $0.1$ from $0.5$ to $3.0\;[m s^\text{-2}]$. 
-The computed funnels are displayed in fig. \ref{fig:funnelSamples}.
+Funnels are displayed with the $\Delta_l$ for every $0.5$ from $0.5$ to $3.0\;[m s^\text{-2}]$. 
+The computed funnels are displayed in Fig. \ref{fig:funnelSamples}.
 The funnel, which is ellipsoid, is projected to each coordinate for visualization purposes.
 There are two notable characteristics from the generated funnels shown in fig. \ref{fig:funnelSamples}. 
-First, if the disturbance $\Delta_l$ is set to the same value, the funnels converges to the similar values regardless $j=\{s,b\}$.
-%the found ultimate bounds are similar regardless of initial condition if the disturbance $\Delta_k$ is set to similar value. 
-The second one is that the ultimate bounds are proportional to the value of $\Delta_l$. 
-It is the expected result from the analysis in eq. \eqref{eq:expected}.
+First, if the disturbance $\Delta_l$ is set to the same value, the funnels converges to the similar values regardless of the initial condition $j$.
+The second one is that the ultimate bounds of the each axis are proportional to the value of $\Delta_l$. 
+These are the expected result from the analysis in eq. \eqref{eq:expected}.
 
 \subsection{Combining funnels}
 \begin{figure}[t]
 \centering
 \includegraphics[width=8cm]{funnel_combine.pdf}
 \caption{Concept figure to explain how to connect funnels.}
-% with respect to the maximum disturbance during each time segment. For example, in the figure, $\Delta(t_{n-2}) = \Delta_l$, $\Delta(t_{n-1}) = \Delta_{l}$, $\Delta_M(t_{n}) = \Delta_l$, $\Delta_M(t_{n+1}) = \Delta_{l+2}$, and $\Delta_M(t_{n+2}) = \Delta_{l+2}$.} 
  \label{fig:combiningConcept}
 \end{figure}
 
-We want to evaluate the possible boundary of the state $p = e_p + p^r$ using the funnel library by assigning funnels along the reference trajectory. 
-In sec. \label{sec:computingFunnel}, we described the method how to generate funnels for the multirotor error dynamics on translational motion with various fixed disturbance norm values.
+In sec. \ref{sec:computeFunnels}, we described the method how to generate funnels with various fixed disturbance norm values.
 However, the disturbance $\Delta(t)$ will keep varying with respect to time in most of flight operation scenarios.
-For example, let us assume that we use only one funnel $F_{\Delta_l}^j$ with the $j$ satisfying $\xi_0 \subset \xi_j$. 
-Then, we have to chose $\Delta_l$ satisfying $|\Delta(t)| \leq \Delta_l$ because it is the required condition used in eq. 16\eqref{eq:}.
-In this case, the funnel analysis will indicate that set of error will eventually converge to the ultimate bound when $|\Delta| \leq \Delta_l$. Then, the selected funnel would be too conservative since the size of the ultimate bound is proportional to the norm of disturbance, and the actual norm of disturbance would be smaller than $\Delta_l$. 
+Let us assume that we use only one funnel computed with $\Delta_l$ satistying $|\Delta(t)| \leq \Delta_l$ for $t>0$.
+In this case, the funnel analysis will indicate that set of error will eventually converge to the ultimate bound with $|\Delta| = \Delta_l$. 
+Then, the selected funnel will be too conservative since the size of the ultimate bound is proportional to the norm of disturbance.
 Hence, in this subsection, we present the method for applying the funnel library computed with the fixed values of $\Delta_l$ to the general cases with time varying $\Delta(t)$. 
 \begin{algorithm}[t]
   \caption{Assigning funnels along reference trajectory
@@ -564,98 +498,96 @@ Hence, in this subsection, we present the method for applying the funnel library
     \Function{Combine Funnels }{$\Delta(t)$, $\xi_o$, $\mathcal{F}$}
 	\State \textbf{find }$\Delta_{l}$\textbf{ s.t.} $\Delta_{l-1} < \Delta(0) \leq \Delta_l$
 	\State $\Delta_{0} \gets \Delta_l$
-	\State \textbf{find $i$ and $j$ with smallest volume of} $\bar{F}$  \textbf{s.t.}
+	\State \textbf{find $t_n$ and $j$ with smallest volume of} $\bar{F}$  \textbf{s.t.}
 	\State $\bar{F}=\{F|\xi_0 \subset F,\;F\in F_{\Delta_0}\}$
-	\State $i_0 \gets i$ (\text{index of }$\bar{F}$)
+	\State $i_0 \gets t_n$ (\text{index of }$\bar{F}$)
 	\State $j_0 \gets j$ (\text{initial condition of }$\bar{F}$)
-      \For{$n \gets 1 \textrm{ to } N$}
-				\State \textbf{find }$\Delta_l$\textbf{ s.t. } $\Delta_{l-1} < \Delta_M \leq \Delta_l$
-				\State \text{where} $\Delta_M = \max(\Delta(t)),\;\forall t\in(t_{n-1},t_n]$
-				\State $\Delta_{n} \gets \Delta_l$
-				\If{$\Delta_n = \Delta_{n-1}$}
-				\State $i_n \gets i_{n-1}+1$, $j_n \gets j_{n-1}$
-				\Else
-				\State \textbf{find $i$ and $j$ with smallest volume of} $\bar{F}$ \textbf{s.t.}  
-				\State $\bar{F}=\{F|F_{\Delta_{n-1}}^{j_{n-1}}(i_{n-1}+1) \subset {F},\;F \in F_{\Delta_n}\}$
-				\State $i_n \gets i$, $j_n \gets j$
-				\EndIf
+      \For{$m \gets 1 \textrm{ to } M$}
+				\State \textbf{find }$\Delta_l$\textbf{ s.t. } $\Delta_{l-1} < \hat{\Delta} \leq \Delta_l$
+				\State \text{where} $\hat{\Delta} = \max(\Delta(t)),\;\forall t\in[t_{m},t_{m+1}]$
+				\State $\Delta_{m} \gets \Delta_l$
+%				\If{$\Delta_m = \Delta_{m-1}$}
+%				\State $i_m \gets i_{m-1}+1$, $j_m \gets j_{m-1}$
+%				\Else
+				\State \textbf{find $t_n$ and $j$ with smallest volume of} $\bar{F}$ \textbf{s.t.}  
+				\State $\bar{F}=\{F|F_{\Delta_{m-1}}^{j_{m-1}}(i_{m-1}+1) \subset {F},\;F \in F_{\Delta_m}\}$
+				\State $i_m \gets t_n$, $j_m \gets j$
+%				\EndIf
       \EndFor
-      \State \Return{$l_n$, $j_n$, $i_n$ for $n=\{1,\cdots,N\}$}
+      \State \Return{$\Delta_m$, $j_m$, $i_m$ for $m=\{1,\cdots,M\}$}
     \EndFunction
   \end{algorithmic}
 \end{algorithm}
 
-Our approach for generating funnel with the time varying disturbance is selecting segments of funnels in the library in accordance with the disturbance $\Delta(t)$ at the discrete times $t_n$.
-Here, selecting segments of funnel means that we choose the disturbance level $\Delta_l$, initial condition of errors $j$, and index of the funnel $i$ for given time $t_n$.
+In accordance with the funnel computation, we discretized the flight time with the same $\text{d}t$ used in eq. \eqref{eq:dt}.
+Let denote the descritezed time as ${t}_m$ $(m = 0,\cdots,M)$.
+Then, our approach for generating funnel with the time varying disturbance is assigning $i_m$, $j_m$, and $\Delta_m$ to quote $F_{\Delta_{m}}^{j_m}(i_m)$ for all discretized time $t_m$ during the flight. 
 
-First of all, we explain the method for deciding the disturbance level $\Delta_l$ for time $t_n$ which will be denoted as $\Delta_n$.
-Among all $\Delta_l$ values, the obvious choice would be using the minimum one satisfying $|\Delta(t)| \leq \Delta_l$ during $t\in(t_{n-1},t_n]$. It is because that $\Delta_l$ is the closest to the actual $|\Delta(t)|$ as well as the condition required in eq. 16\eqref{eq:} is satisfied.
-If the step size between $\Delta_l$ and time intervals are fine enough, the actual disturbance could be well reflected in the problem set in the discretized manner. 
-%Let $\Delta_n$ denote the chosen disturbance level at $t_n$.
+First of all, we explain the method for deciding the disturbance level $\Delta_l$ for $t \in [t_{m},t_{m+1}]$ which will be denoted as $\Delta_m$.
+Among all $\Delta_l$ values, the obvious choice would be using the minimum one satisfying $|\Delta(t)| \leq \Delta_l$ during $t\in[t_{m},t_{m+1}]$. It is because that $\Delta_l$ is the closest to the actual $|\Delta(t)|$ as well as the condition required in eq. \eqref{eq:deltaConst} is satisfied.
+If the step size between $\Delta_l$ and time intervals are discretized fine enough, the actual disturbance will be well reflected. 
 This procedure is described in the first row of the fig. \ref{fig:combiningConcept}.
 
-Secondly, with the selected disturbance level $\Delta_n$, we present the method to selecting the indices $i_n$ and $j_n$. For further explanations, for now, we assume that $\Delta_{n-1}$, $i_{n-1}$, and $j_{n-1}$ are given.
-Once we have $F_{\Delta_{n-1}}^{j_{n-1}}(i_{n-1})$, the set of error states at $t_n$ can be directly accessible from the funnel library by referring $F_{\Delta_{n-1}}^{j_{n-1}}(i_{n-1}+1)$. 
-Then, we can find $\bar{F} \in F_{\Delta_n}$ satisfying $F_{\Delta_{n-1}}^{j_{n-1}}(i_{n-1}+1) \subset \bar{F}$.
-It means that the set of error defined with $F_{\Delta_{n-1}}^{j_{n-1}}(i_{n-1})$ will evolve and be the subset of $\bar{F}$ at $t_n$. Since $\bar{F}$ complies with the definition of funnel between the time $t\in(t_{n-1},t_n]$, it is possible to assign any combination of $i_n$ and $j_n$ indicating elements of $\bar{F}$.
-However, because we are interested in the outermost bound of errors as tight as possible, we choose $i_n$ and $j_n$ indicating the funnel which has the smallest volume. Selecting the smallest volume funnel could easily done since the volume of an ellipsoid is proportional to the determinant of the ellipsoid defined in eq. \eqref{eq:}19. 
+Secondly, with the selected disturbance level $\Delta_m$, we present the method for picking the indices $i_m$ and $j_m$. For further explanations, for now, we assume that $\Delta_{m-1}$, $i_{m-1}$, and $j_{m-1}$ are given.
+Once we have $F_{\Delta_{m-1}}^{j_{m-1}}(i_{m-1})$, the set of error states at $t_m$ can be directly accessible from the funnel library by referring $F_{\Delta_{m-1}}^{j_{m-1}}(i_{m-1}+1)$. 
+Then, we can find $\bar{F} \in F_{\Delta_m}$ satisfying $F_{\Delta_{m-1}}^{j_{m-1}}(i_{m-1}+1) \subset \bar{F}$.
+It means that the set of error defined with $F_{\Delta_{m-1}}^{j_{m-1}}(i_{m-1})$ will evolve and be the subset of $\bar{F}$ at $t_m$. 
+Accordingly, it is possible to assign any combination of $i_m$ and $j_m$ indicating elements of $\bar{F}$.
+However, because we are interested in evaluating the reachable set as tight as possible, we choose $i_m$ and $j_m$ indicating $F_{\Delta_m}^{j_m}(i_m)$ with the smallest volume. 
+Selecting the smallest volume funnel could be easily done since the volume of an ellipsoid is proportional to the determinant of the ellipsoid defined in eq. \eqref{eq:discreteFunnel}. 
 
-Even though we explained how to find the combination with given $\Delta_{n-1}$, $i_{n-1}$, and $j_{n-1}$, in actual scenario, $\Delta_0$ can be computed in the same manner and $\xi_0$ can act a role same as $F_{\Delta_{n-1}}^{j_{n-1}}(i_{n-1}+1)$.
-Therefore, we can combine funnels in the library by iterating from $t_0$ to $t_N$.
-%By iterating the first and second procedures from the $t_0$, we can construct the funnel for all time interal $t_n$ $n=\{0,\cdots,N\}$. 
-The overall procedure explained is summarized in the algorithm 1.
-
-%As a remedy, we can mix and match multiple funnels we computed to generate a realistic funnel rather than conservative. 
-%To take advantages from the funnels computed with discrete time and disturbances $\Delta_l$, we 
-%assign one discretized disturbance among $\Delta_l$s  to represent the norm of disturbance $|\Delta(t)|$ for each time segment $t\in(t_{n-1},t_n]$. 
-%Each funnel $F_{\Delta_{l}}^j$ is evaluated with the setting $|\Delta| \leq \Delta_l$. 
-%In accordance with that, 
-%Among all $l$ values, the obvious choice would be using the minimum one satisfying $|\Delta(t)| \leq \Delta_l$ during the time segment $t\in(t_{n-1},t_n]$. It is because that $\Delta_l$ is the closest to the actual $|\Delta(t)|$ as well as the condition required in eq. 16\eqref{eq:} is satisfied.
-%If the step size between $\Delta_l$ and time intervals are fine enough, the actual disturbance could be well reflected in the problem set in the discretized manner. Let $\Delta_M$ denote the chosen disturbance level at each time interval.
-%%And since $|\Delta(t)|\leq \Delta_l$, we can fulfill the condition required in eq. 16\eqref{eq:}.
-%It is described in the first row of the fig. \ref{fig:combiningConcept}.
-%In the same manner, once we have the history of $\Delta(t)$, we can compute the maximum disturbance $\Delta_M$ for each time segment $t\in(t_{n-1},t_n]$ as described in fig. \ref{fig:combiningConcept}. Furthermore, we can find the disturbance level $\Delta_l$ satisfying $\Delta_{l-1} < \Delta_M \leq \Delta_l$. 
-%Then, the magnitude of disturbance during the time segment is close and smaller than $\Delta_l$. Thus, 
-%the funnel $F_{\Delta_l}$ computed with the maximum disturbance $\Delta_l$ is expected to behave similar to the actual funnel. 
-%As we can refer from the definition of the funnel in eq. \eqref{eq:funnel1},
-%
-%Definition of smallest. 
-%We want to sequence the best fitting funnel, meaning that the ellipsoid with the smallest volume while enclosing the previous funnel.
-%The volume of an ellipsoid is proportional to the determinant of the matrix $P_{\Delta_l}^j(n)/\rho_{\Delta_l}^j(n)$.
-%Therefore, we easily can compare the size of the funnels that encapsulating the funnel in the previous time sequence funnel.
+So far, we explained the method how to find $F_{\Delta_m}^{j_m}(i_m)$ for $t_m$. In actual scenario, at $t_0$, $\Delta_0$ can be computed in the same manner and the initial set of error $\xi_0$ can act a role same as $F_{\Delta_{m-1}}^{j_{m-1}}(i_{m-1}+1)$.
+Therefore, we can select funnels in the library from $t_0$ to $t_M$ in order.
+The overall procedure is summarized in the algorithm 1.
 
 \noindent\textbf{Note.} 
-To implement the algorithm, we have to make the routine checking whether the condition $F_1 \subset F_2$ with the sets $F_1 = \{e|e^\top R_1 e \leq 1\}$ and $F_2 = \{e|e^\top R_2 e \leq 1\}$ is true or false where $R_1$ and $R_2$ are positive definite quadratic matrices.
-In $F_1$ and $F_2$, the center of the ellipsoids are coincident. 
-Since the sets are defined such as a quadratic functions,
-we can show that $F_1 \subset F_2$ is satisfied when $\lambda_{\max}(D_1^{-1}R_2D_1^{-\top} )\leq 1$ where $D_1$ is the Cholesky decomposition of $R_1( = D_1D_1^\top)$.
+To implement the algorithm, we have to make the routine to check whether the condition $F_1 \subset F_2$ is true or false where the the sets $F_1 = \{e|e^\top R_1 e \leq 1\}$ and $F_2 = \{e|e^\top R_2 e \leq 1\}$ and  $R_1$ and $R_2$ are positive definite matrices.
+In $F_1$ and $F_2$, the center of the ellipsoids are coincident at zero. 
+Since the sets are defined as quadratic functions,
+we can show that $F_1 \subset F_2$ is satisfied when $\lambda_{\max}(D_1^{-1}R_2D_1^{-\top} )\leq~1$ where $D_1$ is the Cholesky decomposition of $R_1( = D_1D_1^\top)$.
 
 \subsection{Funnel for checking robustness of reference trajectories}
-Once we have a multirotor and a reference trajectory, we can compute funnel around the reference trajectory. 
-To check whether the given trajectory robust or not with respect to the obstacles, we can do collision check with the funnel and obstacles.
+Once we generate the funnel library and combination of funnel pieces around the reference trajectory, the reachable set of multirotor position and velocity could be computed. Since we are particularly interested in checking the robustness of the reference trajectory, we focus on computing the reachable set of position.
+As in eq. \eqref{eq:discreteFunnel}, a piece of funnel could be represented with the inequality 
+\begin{equation}
+F_{\Delta_m}^{j_m}(i_m) = \{e|e^\top P_{\Delta_m}^{j_m}(i_m)e \leq \alpha_{\Delta_m}^{j_m}(i_m)\}. \nonumber
+\end{equation} 
+Let $P_m = P_{\Delta_m}^{j_m}(i_m) / \alpha_{\Delta_m}^{j_m}$, and, from eq. \eqref{eq:funnelP}, the structure of $P_m$ is
+\begin{equation}
+P_m = \left[
+\begin{array}{cc}
+P_{m,p} & P_{m,pv} \\
+P_{m,pv} & P_{m,v} 
+\end{array}
+\right]. \nonumber
+\end{equation}
+Then, the set of translational error, including position and velocity erros, can be projected into the position error ellipsoid such as
+\begin{equation}
+e_p^\top (P_{m,p} - P_{m,pv}^2 P_{m,v}^{-1}) e_p = 1. \label{eq:positionError}
+\end{equation}
+Therefore, for each $n$, the set of position can be evaluated with $e_p$ satisfying eq. \eqref{eq:positionError} such as $p_m = p^r(t_m) + e_p$.  
 
-The method for checking collision between funnel and obstacles will be explained in detail.
+For example, let us define the position of a point on an obstacle as $p_\text{obs}$ and the parameter $\eta$ as 
+\begin{equation}
+\eta = (p_\text{obs}-p^r(t_m))^\top (P_{m,p} - P_{m,pv}^2 P_{m,v}^{-1})(p_\text{obs}-p^r(t_m)). \nonumber
+\end{equation}
+If $\eta \leq 1$, the point on the obstacle is inside of the reachable set of the position., Consequently, there will be a possibility of collision between the multirotor and the obstacle. On the other hands, if $\eta > 1$, the funnel analysis guarantees that the collision will not happen. 
 
-%The projected ellipsoid is
-%\begin{equation}
-%P_x = P_p - P_{pv}^2 P_v^{-1}. \nonumber
-%\end{equation}
-
-\section{Simulations}
-Monte Carlo simulation will be inserted to show that the funnel can encapsulate the error trajectories as supposed. 
-\subsection{Simulation setup}
-Simulation setup will be explained. Environment would be the Gazobo integrated with RotorS UAV simulator which explicitely incorporating the rotor drag terms.
-Multirotor will follow the minimum snap trajectories generated with to connect randomly generated waypoints.
-The initial condition is also randomly generated inside of the ultimate bound. 
-Hence, the goal of the simulation is to show that the trajectories starting inside of the ultimate bound (evaluated with the computed funnel) cannot escape the ultimate bound.
-\subsection{Simulation results}
-Plan is to giving explanation with the following style figure \ref{fig:simulation}
-\begin{figure}
-\centering
-\includegraphics[width=9cm]{monteCarlo.pdf}
-\caption{The green ellipse is the ultimate bound projected to each coordinate. 
-Since the gains $K_{p,x}$ and $K_{p,y}$, and $K_{v,x}$ and $K_{v,y}$ are set to same values, errors on $x$ and $y$ coordinates are displayed in the same figure.} \label{fig:simulation}
-\end{figure}
+%\section{Simulations}
+%Monte Carlo simulation will be inserted to show that the funnel can encapsulate the error trajectories as supposed. 
+%\subsection{Simulation setup}
+%Simulation setup will be explained. Environment would be the Gazobo integrated with RotorS UAV simulator which explicitely incorporating the rotor drag terms.
+%Multirotor will follow the minimum snap trajectories generated with to connect randomly generated waypoints.
+%The initial condition is also randomly generated inside of the ultimate bound. 
+%Hence, the goal of the simulation is to show that the trajectories starting inside of the ultimate bound (evaluated with the computed funnel) cannot escape the ultimate bound.
+%\subsection{Simulation results}
+%Plan is to giving explanation with the following style figure \ref{fig:simulation}
+%\begin{figure}
+%\centering
+%\includegraphics[width=9cm]{monteCarlo.pdf}
+%\caption{The green ellipse is the ultimate bound projected to each coordinate. 
+%Since the gains $K_{p,x}$ and $K_{p,y}$, and $K_{v,x}$ and $K_{v,y}$ are set to same values, errors on $x$ and $y$ coordinates are displayed in the same figure.} \label{fig:simulation}
+%\end{figure}
 
 \section{Experiments}
 Experimental scenario is the following. 
@@ -738,3 +670,4 @@ We want to find the \textit{safe} velocity that a multirotor can go through a pi
 
 
 \end{document}
+
